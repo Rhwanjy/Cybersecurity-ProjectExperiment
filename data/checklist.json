@@ -1,0 +1,131 @@
+[
+  {
+    "id": "AV-002",
+    "risk": "high",
+    "days": 14,
+    "title": {
+      "en": "Identify and protect critical aviation systems",
+      "ar": "تحديد أنظمة الطيران الحرجة وحمايتها"
+    },
+    "domain": {
+      "en": "Critical Aviation Systems Risk Management",
+      "ar": "إدارة مخاطر أنظمة الطيران الحرجة"
+    },
+    "question": {
+      "en": "Has EgyptAir identified its critical systems and data, assessed the cyber risks to them, and put safeguards in place based on that assessment?",
+      "ar": "هل حددت مصر للطيران أنظمتها وبياناتها الحرجة، وقيّمت مخاطرها السيبرانية، وطبّقت ضوابط بناءً على ذلك التقييم؟"
+    },
+    "example": {
+      "en": "Take your baggage tracking system. Is it or any of its data considered critical? If so, has your team assessed the risk of losing access to the baggage records, and what safeguard is in place?",
+      "ar": "لنأخذ نظام تتبّع الأمتعة. هل يُعد النظام أو بعض بياناته حرجًا؟ إذا كان كذلك، فهل قيّم الفريق خطر تعذّر الوصول إلى سجلات الأمتعة، وما الضابط المطبّق؟"
+    },
+    "actions": {
+      "en": "Ask the client to name one critical system and confirm verbally that it is listed, its risks were assessed, and a safeguard was implemented. If a gap is found, update the inventory or risk assessment and assign an owner and deadline for any missing safeguard.",
+      "ar": "اطلب من العميل تسمية نظام حرج واحد والتأكيد شفهيًا على إدراجه في السجل وتقييم مخاطره وتطبيق ضابط لحمايته. عند وجود فجوة، حدّث السجل أو تقييم المخاطر وعيّن مسؤولًا وموعدًا لتطبيق الضابط الناقص."
+    },
+    "why": {
+      "en": "A critical system or its data can be overlooked during risk assessment and left without appropriate protection.",
+      "ar": "قد يُغفل نظام حرج أو بياناته أثناء تقييم المخاطر، مما يتركه دون حماية مناسبة."
+    },
+    "standard": {
+      "name": {
+        "en": "ICAO Annex 17 — Aviation Security, 12th ed. (July 2022)",
+        "ar": "ملحق الإيكاو 17 — أمن الطيران، الطبعة الثانية عشرة (يوليو 2022)"
+      },
+      "clause": "4.9.1",
+      "excerpt": {
+        "en": "identify their critical information and communications technology systems and data used for civil aviation purposes",
+        "ar": "تحديد نظم تكنولوجيا المعلومات والاتصالات الحرجة وبياناتها المستخدمة لأغراض الطيران المدني"
+      },
+      "type": "verified",
+      "url": "https://www.icao.int/sites/default/files/APAC/Meetings/2024/2024%20Cyber%20security%20Workshop%20and%20TTX/5-Presentations/SP03-Setting_Cyber_Scene.pdf",
+      "publicationUrl": "https://store.icao.int/en/annex-17-security"
+    }
+  },
+  {
+    "id": "AV-003",
+    "risk": "high",
+    "days": 0,
+    "title": {
+      "en": "Restrict traffic between network zones",
+      "ar": "تقييد حركة البيانات بين مناطق الشبكة"
+    },
+    "domain": {
+      "en": "Network Security — Network Segmentation",
+      "ar": "أمن الشبكات — تقسيم الشبكة"
+    },
+    "question": {
+      "en": "Do your firewall rules block traffic between network zones by default and allow only approved connections to critical aviation systems?",
+      "ar": "هل تحجب قواعد جدار الحماية حركة البيانات بين مناطق الشبكة افتراضيًا، وتسمح فقط بالاتصالات المعتمدة بأنظمة الطيران الحرجة؟"
+    },
+    "example": {
+      "en": "When a bag is checked in, the check-in system needs to send the bag tag number to the baggage tracking system. Do your firewall rules allow that specific connection while blocking direct access to the baggage database?",
+      "ar": "عند تسجيل حقيبة، يرسل نظام تسجيل الركاب رقم بطاقة الحقيبة إلى نظام تتبّع الأمتعة. هل تسمح قواعد جدار الحماية بهذا الاتصال وتمنع الوصول المباشر إلى قاعدة بيانات الأمتعة؟"
+    },
+    "actions": {
+      "en": "Confirm verbally that the check-in system can send tag data to the tracking application and cannot connect directly to its database. If a gap is found, record the affected connection and assign the network team to adjust the rule and test both paths.",
+      "ar": "تحقق شفهيًا من إمكانية إرسال بيانات البطاقة إلى تطبيق التتبّع ومن حجب الاتصال المباشر بقاعدة بياناته. عند وجود فجوة، سجّل الاتصال المتأثر وكلّف فريق الشبكات بتعديل القاعدة واختبار المسارين."
+    },
+    "why": {
+      "en": "Restricting traffic between zones limits the systems an attacker can reach from a compromised check-in system.",
+      "ar": "يحد تقييد حركة البيانات بين المناطق من الأنظمة التي يمكن للمهاجم الوصول إليها عبر نظام تسجيل ركاب مخترق."
+    },
+    "standard": {
+      "name": {
+        "en": "ICAO Annex 17 — Aviation Security, 12th ed. (July 2022)",
+        "ar": "ملحق الإيكاو 17 — أمن الطيران، الطبعة الثانية عشرة (يوليو 2022)"
+      },
+      "clause": "4.9.2",
+      "excerpt": {
+        "en": "security by design, supply chain security, network separation",
+        "ar": "الأمن منذ التصميم، وأمن سلسلة التوريد، وفصل الشبكات"
+      },
+      "type": "verified",
+      "url": "https://www.icao.int/sites/default/files/APAC/Meetings/2024/2024%20Cyber%20security%20Workshop%20and%20TTX/5-Presentations/SP03-Setting_Cyber_Scene.pdf",
+      "publicationUrl": "https://store.icao.int/en/annex-17-security"
+    }
+  },
+  {
+    "id": "AV-004",
+    "risk": "medium",
+    "days": 30,
+    "title": {
+      "en": "Set and verify supplier cybersecurity requirements",
+      "ar": "تحديد متطلبات الأمن السيبراني للمورّدين والتحقق منها"
+    },
+    "domain": {
+      "en": "Supply Chain Security",
+      "ar": "أمن سلسلة التوريد"
+    },
+    "question": {
+      "en": "Do you require suppliers that support critical airline systems to follow specific cybersecurity standards or safeguards, and do you check that they meet those requirements?",
+      "ar": "هل تشترطون على مورّدي أنظمة الطيران الحرجة اتباع معايير أو ضوابط محددة للأمن السيبراني، وهل تتحققون من التزامهم بها؟"
+    },
+    "example": {
+      "en": "Say a supplier runs your baggage tracking system. What cybersecurity requirements do you include in their contract? For example, do you specify a standard they must follow or require encryption when data is stored or shared?",
+      "ar": "لنفترض أن مورّدًا يشغّل نظام تتبّع الأمتعة. ما متطلبات الأمن السيبراني التي تدرجونها في عقده؟ هل تحددون، مثلًا، معيارًا يجب اتباعه أو تشترطون تشفير البيانات عند تخزينها أو مشاركتها؟"
+    },
+    "actions": {
+      "en": "Ask the client to describe one supplier requirement and how the airline verifies it. If requirements are missing or vague, document the expected safeguards and assign someone at EgyptAir to verify them.",
+      "ar": "اطلب من العميل ذكر متطلب واحد للمورّد وتوضيح طريقة التحقق منه. إذا كانت المتطلبات غائبة أو مبهمة، وثّق الضوابط المطلوبة وعيّن مسؤولًا في مصر للطيران للتحقق منها."
+    },
+    "why": {
+      "en": "A supplier’s software or services can expose systems or data the airline relies on. Verification helps identify missing protections before an incident.",
+      "ar": "قد تعرّض برامج المورّد أو خدماته الأنظمة والبيانات التي تعتمد عليها الشركة للخطر. يساعد التحقق في اكتشاف الضوابط الناقصة قبل وقوع حادث."
+    },
+    "standard": {
+      "name": {
+        "en": "ICAO Annex 17 — Aviation Security, 12th ed. (July 2022)",
+        "ar": "ملحق الإيكاو 17 — أمن الطيران، الطبعة الثانية عشرة (يوليو 2022)"
+      },
+      "clause": "4.9.2",
+      "excerpt": {
+        "en": "supply chain security",
+        "ar": "أمن سلسلة التوريد"
+      },
+      "type": "verified",
+      "url": "https://www.icao.int/sites/default/files/APAC/Meetings/2024/2024%20Cyber%20security%20Workshop%20and%20TTX/5-Presentations/SP03-Setting_Cyber_Scene.pdf",
+      "publicationUrl": "https://store.icao.int/en/annex-17-security"
+    }
+  }
+]

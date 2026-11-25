@@ -12,7 +12,7 @@
   <script defer src="./app.js"></script>
 </head>
 <body>
-  <!-- Shared vector symbols: one cloud and one top-down airliner, both drawn facing the inline-end direction. -->
+  <!-- Shared vector symbols: one cloud and one top-down airliner, both drawn facing right. -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
     <defs>
       <symbol id="cloud" viewBox="0 0 190 80">
@@ -40,17 +40,8 @@
     <span class="cloud c4"><svg><use href="#cloud"/></svg></span>
     <span class="cloud c5"><svg><use href="#cloud"/></svg></span>
   </div>
-  <div class="flight" aria-hidden="true">
-    <svg viewBox="0 0 1200 230" preserveAspectRatio="xMidYMid slice" focusable="false">
-      <path id="route" class="route" d="M-60 200 C 260 20, 620 250, 1260 40"/>
-      <g class="jet" color="#0b2a4a">
-        <use href="#plane" width="54" height="54" x="-27" y="-27"/>
-        <animateMotion dur="22s" repeatCount="indefinite" rotate="auto" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
-          <mpath href="#route"/>
-        </animateMotion>
-      </g>
-    </svg>
-  </div>
+  <!-- The big airliner cruises diagonally across the whole screen, behind the content and clear of the globe. -->
+  <div class="jet" aria-hidden="true"><svg viewBox="0 0 64 64" focusable="false"><use href="#plane"/></svg></div>
 
   <!-- Static shell keeps landmarks and navigation accessible before data loads. -->
   <main>

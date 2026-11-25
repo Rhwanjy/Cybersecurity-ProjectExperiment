@@ -4,8 +4,9 @@
 const strings = {
   company:['EgyptAir','مصر للطيران'], subtitle:['Cybersecurity Audit Checklist','قائمة تدقيق الأمن السيبراني'],
   intro:['A simulated cybersecurity assessment of EgyptAir, Egypt’s national airline.','تقييم محاكاة للأمن السيبراني لشركة مصر للطيران، الناقل الوطني المصري.'],
-  total:['Total items','إجمالي البنود'], reviewed:['Reviewed','تمت المراجعة'], pass:['Control in place','الضابط مطبّق'],
-  gap:['Gap found','فجوة قائمة'], uncertain:['Unconfirmed','غير مؤكد'], pending:['Awaiting review','بانتظار المراجعة'],
+  total:['Total items','إجمالي البنود'], pass:['Control in place','الضابط مطبّق'],
+  gap:['Gap found','فجوة قائمة'], uncertain:['Unconfirmed','غير مؤكد'], open:['Open','مفتوح'], progress:['In progress','قيد التنفيذ'], closed:['Closed','مغلق'],
+  viewSource:['View source','عرض المصدر'],
   checklist:['Checklist','قائمة التدقيق'], register:['Gap Register','سجل الفجوات'],
   order:['Highest risk first, then shortest deadline.','الأعلى خطورة أولًا، ثم الأقرب موعدًا.'],
   noGaps:['No active gaps recorded.','لا توجد فجوات نشطة مسجّلة.'],
@@ -15,7 +16,6 @@ const strings = {
   why:['Justification','المبرر'], standard:['Standard & Control','المعيار والضابط'],
   comment:['Comments','التعليقات'], record:['Record outcome','تسجيل النتيجة'], outcome:['Outcome','النتيجة'],
   edit:['Edit item','تعديل البند'], remove:['Delete item','حذف البند'],
-  review:['Mark reviewed','تحديد كمُراجَع'], reopen:['Reopen','إعادة فتح'],
   risk:['Risk','الخطورة'], urgency:['Urgency','الأولوية الزمنية'], high:['High','مرتفعة'],
   medium:['Medium','متوسطة'], low:['Low','منخفضة'], immediate:['Immediate','فوري'],
   days:['days','يومًا'], title:['Title','العنوان'], domain:['Domain','المجال'], question:['Audit question','سؤال التدقيق'],
@@ -98,27 +98,50 @@ const button = (action, key, id = '', classes = '') =>
   `<button type="button" data-action="${action}" data-id="${escape(id)}" class="${classes}">${t(key)}</button>`;
 const deadline = days => days === 0 ? t('immediate') : `${days} ${t('days')}`;
 const label = (key, value) => `<section><small>${t(key)}</small><p class="preserve">${value}</p></section>`;
+// Workflow status follows the audit outcome: nothing recorded is Open, a gap or unconfirmed control is
+// In progress, and a control confirmed in place is Closed.
 const outcomeClass = outcome => outcome ? `${outcome}-tone` : '';
-const status = item => `<span class="pill ${outcomeClass(item.outcome)} ${item.id === flipId ? 'flip' : ''}">${t(item.outcome || (item.reviewed ? 'reviewed' : 'pending'))}</span>`;
-const badge = (key, value) => `<span class="pill">${t(key)} · ${value}</span>`;
+const statusOf = item => item.outcome === 'pass' ? 'closed' : item.outcome ? 'progress' : 'open';
+const status = item => `<span class="pill st-${statusOf(item)} ${item.id === flipId ? 'flip' : ''}"><i></i>${t(statusOf(item))}</span>`;
+const outcomePill = item => item.outcome ? `<span class="pill ${item.outcome}-tone"><i></i>${t(item.outcome)}</span>` : '';
+// Colors follow heat: red is hottest, then orange, then calmer blues and grays.
+const urgencyLevel = days => days === 0 ? 'now' : days <= 14 ? 'soon' : days <= 90 ? 'mid' : 'later';
+const badge = (key, value, level) => `<span class="pill lv-${level}"><i></i>${t(key)} · ${value}</span>`;
+const riskBadge = item => badge('risk', t(item.risk), riskKey(item.risk));
+const urgencyBadge = item => badge('urgency', deadline(item.days), urgencyLevel(item.days));
 const planeIcon = '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><use href="#plane"/></svg>';
 const riskKey = risk => rank[risk] ? risk : 'medium';
 
-// The checklist and register always render from the same item records.
+// The standard and control sit on a tear-off stub beside the ticket, readable without opening anything.
+function stub(item) {
+  const ref = item.standard || {};
+  const [name, ...rest] = String(localized(ref.name || {})).split(' — ');
+  const clause = /^(.*?)\s*\((.*)\)\s*$/.exec(String(ref.clause || ''));
+  const number = escape(clause ? clause[1] : ref.clause), tag = clause ? escape(clause[2]) : '';
+  return `<button type="button" class="stub" data-action="source" data-id="${escape(item.id)}">
+    <span class="stub-label">${t('standard')}</span>
+    <span class="stub-name">${name}</span>${rest.length ? `<span class="stub-sub">${rest.join(' — ')}</span>` : ''}
+    <span class="stub-clause"><bdi>${number}</bdi></span>${tag ? `<span class="stub-tag"><bdi>${tag}</bdi></span>` : ''}
+    <span class="stub-type ${escape(ref.type)}">${t(ref.type) }</span>
+    <span class="stub-go">${t('viewSource')}<svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 6h8M6.5 2.5 10 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span class="barcode" aria-hidden="true"></span></button>`;
+}
+
 function card(item, index = 0) {
   return `<article class="card ${animateEntrance || animateCards ? 'enter' : ''}" data-risk="${riskKey(item.risk)}" style="--i:${Math.min(index, 8)}">
+    <div class="pass-main">
     <div class="row pass-head"><small class="pass-id">${planeIcon}<bdi>${escape(item.id)}</bdi></small>${status(item)}</div>
     <h4>${localized(item.title)}</h4>
     <p class="question">${localized(item.question)}</p>
-    <div class="meta">${badge('risk', t(item.risk))}${badge('urgency', deadline(item.days))}
-      ${item.reviewed ? `<span class="pill">${t('reviewed')}</span>` : ''}</div>
-    ${button('source', 'standard', item.id, 'reference')}
+    <div class="meta">${riskBadge(item)}${urgencyBadge(item)}${outcomePill(item)}</div>
     <details data-record="${escape(item.id)}" ${openedDetails.has(item.id) ? 'open' : ''}><summary>${t('details')}</summary>
       ${label('example',localized(item.example))}${label('actions',localized(item.actions))}${label('why',localized(item.why))}
     </details>
     ${item.comment ? label('comment',`<bdi>${escape(item.comment)}</bdi>`) : ''}
-    <div class="card-actions">${button('outcome','record',item.id,'primary')}${button('review',item.reviewed?'reopen':'review',item.id)}
+    <div class="card-actions">${button('outcome','record',item.id,'primary')}
       ${button('comment','comment',item.id)}${button('edit','edit',item.id)}${button('delete','remove',item.id,'danger')}</div>
+    </div>
+    ${stub(item)}
   </article>`;
 }
 
@@ -135,7 +158,7 @@ function showPlan() {
 
 function gapCard(item) {
   return `<article class="gap ${animateEntrance ? 'enter' : ''}"><div class="row"><small><bdi>${escape(item.id)}</bdi></small>${status(item)}</div>
-    <h3>${localized(item.title)}</h3><div class="meta">${badge('risk',t(item.risk))}${badge('urgency',deadline(item.days))}</div>
+    <h3>${localized(item.title)}</h3><div class="meta">${riskBadge(item)}${urgencyBadge(item)}${outcomePill(item)}</div>
     ${label('gapText',`<bdi>${escape(item.gapText)}</bdi>`)}${label('follow',`<bdi>${escape(item.follow)}</bdi>`)}
     ${button('outcome','editGap',item.id)}</article>`;
 }
@@ -207,16 +230,16 @@ function render() {
     <button lang="en" data-action="lang" data-id="en" aria-pressed="${state.lang==='en'}">English</button>
     <button lang="ar" data-action="lang" data-id="ar" aria-pressed="${state.lang==='ar'}">العربية</button></div>`;
   const items = state.items;
-  const reviewed = items.filter(item => item.reviewed).length;
+  const closed = items.filter(item => statusOf(item) === 'closed').length;
   // Numeric deadlines and risk enums make sorting independent of display language.
   const gaps = gapList(items);
   const metrics = [['total',items.length],['pass',items.filter(i=>i.outcome==='pass').length],
     ['gap',gaps.length],['uncertain',items.filter(i=>i.outcome==='uncertain').length]];
   document.querySelector('#summary').innerHTML = `<div class="metrics">
     ${metrics.map(([key,count])=>`<div class="metric ${outcomeClass(key)}"><span>${t(key)}</span><strong data-count="${count}">${count}</strong></div>`).join('')}
-    </div><div class="progress"><span>${t('reviewed')} <bdi>${reviewed} / ${items.length}</bdi></span>
-    <div class="runway" role="progressbar" aria-label="${t('reviewed')}" aria-valuemin="0" aria-valuemax="${items.length}" aria-valuenow="${reviewed}"
-      style="--p:${items.length ? Math.round(reviewed / items.length * 100) : 0}%">
+    </div><div class="progress"><span>${t('closed')} <bdi>${closed} / ${items.length}</bdi></span>
+    <div class="runway" role="progressbar" aria-label="${t('closed')}" aria-valuemin="0" aria-valuemax="${items.length}" aria-valuenow="${closed}"
+      style="--p:${items.length ? Math.round(closed / items.length * 100) : 0}%">
       <div class="runway-track"><div class="runway-fill ${animateEntrance ? 'grow' : ''}"></div></div>
       <span class="runway-plane ${animateEntrance ? 'grow' : ''}">${planeIcon}</span></div></div>`;
   // Group items by domain in the order domains.json lists them. Empty domains get no chip or section.
@@ -224,7 +247,7 @@ function render() {
   if (items.some(item => domainKeyOf(item) === 'other')) known.push(otherDomain());
   const groups = known.map(domain => {
     const all = items.filter(item => domainKeyOf(item) === domain.key);
-    return {domain, all, shown:all.filter(item => !state.hide || !item.reviewed)};
+    return {domain, all, shown:all.filter(item => !state.hide || statusOf(item) !== 'closed')};
   }).filter(group => group.all.length);
   state.selected = state.selected.filter(key => groups.some(group => group.domain.key === key));
   const chosen = groups.filter(group => (!state.selected.length || state.selected.includes(group.domain.key)) && group.shown.length);
@@ -261,7 +284,7 @@ function flipCounters() {
 
 // SMIL motion ignores CSS, so pause the flight path when the visitor asks for reduced motion.
 function syncFlight() {
-  for (const svg of document.querySelectorAll('.flight svg, .emblem svg')) {
+  for (const svg of document.querySelectorAll('.emblem svg')) {
     if (!svg.pauseAnimations) continue;
     if (reducedMotion.matches) { svg.pauseAnimations(); svg.setCurrentTime(6); }
     else svg.unpauseAnimations();
@@ -409,7 +432,6 @@ document.addEventListener('click', event => {
     case 'close': modal.close(); break;
     case 'add': editItem(); break;
     case 'edit': editItem(item); break;
-    case 'review': item.reviewed = !item.reviewed; flipId = item.id; save(); break;
     case 'source': showSource(item); break;
     case 'outcome': editOutcome(item); break;
     case 'comment':

@@ -38,6 +38,11 @@ const rank = {high: 3, medium: 2, low: 1};
 let state;
 let storageFailed = false;
 let openedDetails = new Set();
+// Entrance animations run on first load and after a language switch, never after routine edits.
+let animateEntrance = true;
+// The item whose outcome or review state just changed gets a departure-board flip.
+let flipId = null;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 // Escape all user-entered text before inserting markup. Restrict references to web URLs.
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char =>
@@ -80,13 +85,15 @@ const button = (action, key, id = '', classes = '') =>
 const deadline = days => days === 0 ? t('immediate') : `${days} ${t('days')}`;
 const label = (key, value) => `<section><small>${t(key)}</small><p class="preserve">${value}</p></section>`;
 const outcomeClass = outcome => outcome ? `${outcome}-tone` : '';
-const status = item => `<span class="pill ${outcomeClass(item.outcome)}">${t(item.outcome || (item.reviewed ? 'reviewed' : 'pending'))}</span>`;
+const status = item => `<span class="pill ${outcomeClass(item.outcome)} ${item.id === flipId ? 'flip' : ''}">${t(item.outcome || (item.reviewed ? 'reviewed' : 'pending'))}</span>`;
 const badge = (key, value) => `<span class="pill">${t(key)} · ${value}</span>`;
+const planeIcon = '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><use href="#plane"/></svg>';
+const riskKey = risk => rank[risk] ? risk : 'medium';
 
 // The checklist and register always render from the same item records.
-function card(item) {
-  return `<article class="card">
-    <div class="row"><small><bdi>${escape(item.id)}</bdi> · ${localized(item.domain)}</small>${status(item)}</div>
+function card(item, index = 0) {
+  return `<article class="card ${animateEntrance ? 'enter' : ''}" data-risk="${riskKey(item.risk)}" style="--i:${Math.min(index, 8)}">
+    <div class="row pass-head"><small class="pass-id">${planeIcon}<bdi>${escape(item.id)}</bdi><span>· ${localized(item.domain)}</span></small>${status(item)}</div>
     <h3>${localized(item.title)}</h3>
     <p class="question">${localized(item.question)}</p>
     <div class="meta">${badge('risk', t(item.risk))}${badge('urgency', deadline(item.days))}
@@ -102,7 +109,7 @@ function card(item) {
 }
 
 function gapCard(item) {
-  return `<article class="gap"><div class="row"><small><bdi>${escape(item.id)}</bdi></small>${status(item)}</div>
+  return `<article class="gap ${animateEntrance ? 'enter' : ''}"><div class="row"><small><bdi>${escape(item.id)}</bdi></small>${status(item)}</div>
     <h3>${localized(item.title)}</h3><div class="meta">${badge('risk',t(item.risk))}${badge('urgency',deadline(item.days))}</div>
     ${label('gapText',`<bdi>${escape(item.gapText)}</bdi>`)}${label('follow',`<bdi>${escape(item.follow)}</bdi>`)}
     ${button('outcome','editGap',item.id)}</article>`;
@@ -131,17 +138,50 @@ function render() {
   const metrics = [['total',items.length],['reviewed',reviewed],['pass',items.filter(i=>i.outcome==='pass').length],
     ['gap',gaps.length],['uncertain',items.filter(i=>i.outcome==='uncertain').length]];
   document.querySelector('#summary').innerHTML = `<div class="metrics">
-    ${metrics.map(([key,count])=>`<div class="metric ${outcomeClass(key)}"><span>${t(key)}</span><strong>${count}</strong></div>`).join('')}
+    ${metrics.map(([key,count])=>`<div class="metric ${outcomeClass(key)}"><span>${t(key)}</span><strong data-count="${count}">${count}</strong></div>`).join('')}
     </div><div class="progress"><span>${t('reviewed')} <bdi>${reviewed} / ${items.length}</bdi></span>
-    <progress aria-label="${t('reviewed')}" value="${reviewed}" max="${items.length || 1}"></progress></div>`;
+    <div class="runway" role="progressbar" aria-label="${t('reviewed')}" aria-valuemin="0" aria-valuemax="${items.length}" aria-valuenow="${reviewed}"
+      style="--p:${items.length ? Math.round(reviewed / items.length * 100) : 0}%">
+      <div class="runway-track"><div class="runway-fill ${animateEntrance ? 'grow' : ''}"></div></div>
+      <span class="runway-plane ${animateEntrance ? 'grow' : ''}">${planeIcon}</span></div></div>`;
   const visible = items.filter(i => !state.hide || !i.reviewed);
   document.querySelector('#checklist').innerHTML = `<div class="bar"><h2>${t('checklist')}</h2><div class="row">
     <label class="inline"><input type="checkbox" id="hide" ${state.hide?'checked':''}>${t('hide')}</label>
     ${button('add','add','','primary')}</div></div>
     ${visible.map(card).join('') || `<p class="card muted">${t('empty')}</p>`}`;
   document.querySelector('#register').innerHTML = `<div class="register-box"><h2>${t('register')}</h2>
-    <p class="muted">${t('order')}</p>${gaps.map(gapCard).join('') || `<p class="muted">${t('noGaps')}</p>`}</div>`;
+    <div class="register-body"><p class="muted">${t('order')}</p>${gaps.map(gapCard).join('') || `<p class="muted">${t('noGaps')}</p>`}</div></div>`;
+  if (animateEntrance && !reducedMotion.matches) flipCounters();
+  animateEntrance = false;
+  flipId = null;
 }
+
+// Metric tiles tick up from zero like a departure board settling on its values.
+function flipCounters() {
+  for (const tile of document.querySelectorAll('.metric strong')) {
+    const target = Number(tile.dataset.count);
+    tile.classList.add('flip');
+    if (!target) continue;
+    const started = performance.now();
+    const step = now => {
+      const progress = Math.min((now - started) / 700, 1);
+      tile.textContent = Math.round(target * progress);
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    tile.textContent = 0;
+    requestAnimationFrame(step);
+  }
+}
+
+// SMIL motion ignores CSS, so pause the flight path when the visitor asks for reduced motion.
+function syncFlight() {
+  const svg = document.querySelector('.flight svg');
+  if (!svg?.pauseAnimations) return;
+  if (reducedMotion.matches) { svg.pauseAnimations(); svg.setCurrentTime(6); }
+  else svg.unpauseAnimations();
+}
+reducedMotion.addEventListener?.('change', syncFlight);
+syncFlight();
 
 // Native dialog supplies modal focus handling and Escape-to-close.
 function dialog(title, content) {
@@ -237,6 +277,7 @@ function editOutcome(item) {
   form.elements.outcome.addEventListener('change', toggle);
   toggle();
   onSubmit(data => {
+    flipId = item.id;
     item.outcome = data.get('outcome');
     if (item.outcome === 'gap') {
       item.gapText = data.get('gapText').trim();
@@ -266,11 +307,11 @@ document.addEventListener('click', event => {
   const {action,id} = control.dataset;
   const item = state.items.find(candidate=>candidate.id===id);
   switch (action) {
-    case 'lang': state.lang = id; save(); break;
+    case 'lang': if (state.lang !== id) animateEntrance = true; state.lang = id; save(); break;
     case 'close': modal.close(); break;
     case 'add': editItem(); break;
     case 'edit': editItem(item); break;
-    case 'review': item.reviewed = !item.reviewed; save(); break;
+    case 'review': item.reviewed = !item.reviewed; flipId = item.id; save(); break;
     case 'source': showSource(item); break;
     case 'outcome': editOutcome(item); break;
     case 'comment':

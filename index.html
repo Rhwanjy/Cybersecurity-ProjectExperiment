@@ -40,6 +40,17 @@
     <span class="cloud c4"><svg><use href="#cloud"/></svg></span>
     <span class="cloud c5"><svg><use href="#cloud"/></svg></span>
   </div>
+  <!-- A friendly sun in the corner: slow-turning rays and a soft glow. -->
+  <div class="sun" aria-hidden="true">
+    <svg viewBox="0 0 200 200" focusable="false">
+      <defs><radialGradient id="sunFill" cx="40%" cy="38%" r="70%"><stop offset="0" stop-color="#fff6c2"/><stop offset=".6" stop-color="#ffd54a"/><stop offset="1" stop-color="#ffb21e"/></radialGradient></defs>
+      <g class="rays" stroke="#ffc83a" stroke-width="9" stroke-linecap="round">
+        <path d="M100 8v26M100 166v26M8 100h26M166 100h26M35 35l18 18M147 147l18 18M165 35l-18 18M53 147l-18 18"/>
+      </g>
+      <circle cx="100" cy="100" r="46" fill="url(#sunFill)"/>
+    </svg>
+  </div>
+
   <!-- The big airliner cruises diagonally across the whole screen, behind the content and clear of the globe. -->
   <div class="jet" aria-hidden="true"><svg viewBox="0 0 64 64" focusable="false"><use href="#plane"/></svg></div>
 

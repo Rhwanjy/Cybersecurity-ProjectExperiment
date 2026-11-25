@@ -10,12 +10,11 @@ const strings = {
   checklist:['Checklist','قائمة التدقيق'], register:['Gap Register','سجل الفجوات'],
   order:['Highest risk first, then shortest deadline.','الأعلى خطورة أولًا، ثم الأقرب موعدًا.'],
   noGaps:['No active gaps recorded.','لا توجد فجوات نشطة مسجّلة.'],
-  empty:['No checklist items to show.','لا توجد بنود لعرضها.'], add:['Add item','إضافة بند'],
+  empty:['No checklist items to show.','لا توجد بنود لعرضها.'], 
   hide:['Hide completed','إخفاء البنود المكتملة'], details:['Interview details','تفاصيل المقابلة'],
   example:['Clarification example','مثال توضيحي'], actions:['Action items','الإجراءات المطلوبة'],
   why:['Justification','المبرر'], standard:['Standard & Control','المعيار والضابط'],
   comment:['Comments','التعليقات'], record:['Record outcome','تسجيل النتيجة'], outcome:['Outcome','النتيجة'],
-  edit:['Edit item','تعديل البند'], remove:['Delete item','حذف البند'],
   risk:['Risk','الخطورة'], urgency:['Urgency','الأولوية الزمنية'], high:['High','مرتفعة'],
   medium:['Medium','متوسطة'], low:['Low','منخفضة'], immediate:['Immediate','فوري'],
   days:['days','يومًا'], title:['Title','العنوان'], domain:['Domain','المجال'], question:['Audit question','سؤال التدقيق'],
@@ -26,12 +25,11 @@ const strings = {
   paraphrase:['Paraphrase','إعادة صياغة'], unverified:['Needs verification','يحتاج إلى تحقق'],
   source:['Open ICAO source excerpt','فتح مصدر المقتطف من الإيكاو'], publication:['Full publication URL','رابط الإصدار الكامل'], full:['View full publication','عرض الإصدار الكامل'], close:['Close','إغلاق'], save:['Save','حفظ'],
   cancel:['Cancel','إلغاء'], gapText:['Gap description','وصف الفجوة'], follow:['Follow-up action','إجراء المتابعة'],
-  editGap:['Edit gap','تعديل الفجوة'], duplicate:['This item ID already exists.','معرّف البند مستخدم بالفعل.'],
-  confirm:['Delete this item and its saved comments or gap?','هل تريد حذف هذا البند وتعليقاته أو فجوته المسجّلة؟'],
+  editGap:['Edit gap','تعديل الفجوة'],
   loadError:['Could not load the checklist. Refresh to try again.','تعذّر تحميل القائمة. أعد تحميل الصفحة للمحاولة مرة أخرى.'],
   storageError:['Browser storage is unavailable. Changes will only last while this page is open.','تخزين المتصفح غير متاح. تستمر التغييرات ما دامت هذه الصفحة مفتوحة.'],
   allDomains:['All domains','كل المجالات'], filterBy:['Filter by domain','التصفية حسب المجال'],
-  domainField:['Domain','المجال'], other:['Other','أخرى'],
+  other:['Other','أخرى'],
   noMatch:['No items in the selected domains match the current view.','لا توجد بنود مطابقة في المجالات المحددة.'],
   plan:['Action plan','خطة العمل']
 };
@@ -69,17 +67,28 @@ function webUrl(value) {
   } catch { return ''; }
 }
 
-// Shared seed data initializes a browser once. All edits and findings stay browser-local.
+// The checklist always loads from data/, so updating the JSON updates every visitor. Each browser
+// stores only its own progress: outcomes, gaps, comments, and the interface choices.
+const progressKeys = ['outcome','gapText','follow','comment','risk','days'];
+let baseItems = [];
+const pickProgress = (item, base) => Object.fromEntries(progressKeys
+  .filter(key => item[key] !== undefined && !(base && item[key] === base[key]))
+  .map(key => [key, item[key]]));
+
 async function start() {
   try {
-    try { state = JSON.parse(localStorage.getItem(storageKey)); } catch { storageFailed = true; }
-    const [domainResponse, itemResponse] = await Promise.all([
-      fetch('./data/domains.json'),
-      Array.isArray(state?.items) ? null : fetch('./data/checklist.json')]);
-    if (!domainResponse.ok || (itemResponse && !itemResponse.ok)) throw new Error('Checklist fetch failed');
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch { storageFailed = true; }
+    const [domainResponse, itemResponse] = await Promise.all([fetch('./data/domains.json'), fetch('./data/checklist.json')]);
+    if (!domainResponse.ok || !itemResponse.ok) throw new Error('Checklist fetch failed');
     domains = await domainResponse.json();
-    if (itemResponse) state = {lang:'en', hide:false, selected:[], items:await itemResponse.json()};
-    if (!Array.isArray(state.selected)) state.selected = [];
+    baseItems = await itemResponse.json();
+    // Earlier versions saved whole items; keep their progress and drop the copied content.
+    const progress = saved?.progress ?? Object.fromEntries((saved?.items ?? []).map(item =>
+      [item.id, pickProgress(item, baseItems.find(base => base.id === item.id))]));
+    state = {lang: saved?.lang === 'ar' ? 'ar' : 'en', hide: !!saved?.hide,
+      selected: Array.isArray(saved?.selected) ? saved.selected : [],
+      items: baseItems.map(base => ({...base, ...progress[base.id]}))};
     render();
   } catch {
     notice.textContent = strings.loadError.join(' / ');
@@ -89,7 +98,9 @@ async function start() {
 
 // A single save operation keeps checklist, summary, and register in sync.
 function save() {
-  try { localStorage.setItem(storageKey, JSON.stringify(state)); }
+  const {lang, hide, selected} = state;
+  const progress = Object.fromEntries(state.items.map(item => [item.id, pickProgress(item, baseItems.find(base => base.id === item.id))]));
+  try { localStorage.setItem(storageKey, JSON.stringify({lang, hide, selected, progress})); }
   catch { storageFailed = true; }
   render();
 }
@@ -139,7 +150,7 @@ function card(item, index = 0) {
     </details>
     ${item.comment ? label('comment',`<bdi>${escape(item.comment)}</bdi>`) : ''}
     <div class="card-actions">${button('outcome','record',item.id,'primary')}
-      ${button('comment','comment',item.id)}${button('edit','edit',item.id)}${button('delete','remove',item.id,'danger')}</div>
+      ${button('comment','comment',item.id)}</div>
     </div>
     ${stub(item)}
   </article>`;
@@ -166,7 +177,19 @@ function gapCard(item) {
 // Items point at a domain by key. Anything unmatched falls into an "Other" group instead of vanishing.
 const otherDomain = () => ({key:'other', name:{en:strings.other[0], ar:strings.other[1]}, description:null});
 const domainKeyOf = item => domains.some(d => d.key === item.domainKey) ? item.domainKey : 'other';
-const gateLetter = index => index < 0 ? '•' : String.fromCharCode(65 + index);
+// Each domain gets a drawn icon; unknown domains fall back to a shield.
+const domainIcons = {
+  access:'<circle cx="8" cy="15" r="4"/><path d="M11 12.5 20 4M16 8l3 3M14 10l2.5 2.5"/>',
+  risk:'<path d="M12 3v17M5 20h14M5 7h14"/><path d="M5 7 2.5 13a3 3 0 0 0 5 0Zm14 0-2.5 6a3 3 0 0 0 5 0Z"/>',
+  network:'<circle cx="12" cy="5" r="2.3"/><circle cx="5" cy="19" r="2.3"/><circle cx="19" cy="19" r="2.3"/><path d="M11 7 6 17M13 7l5 10M7.5 19h9"/>',
+  asset:'<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/>',
+  incident:'<path d="M6 19v-6a6 6 0 0 1 12 0v6M4 19h16"/><path d="M12 3v2M4.5 6l1.4 1.4M19.5 6l-1.4 1.4"/>',
+  data:'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>',
+  vendor:'<path d="M3 11l5-4 3 2 3-2 7 5-4 5-3-1-2 2-3-2-2 2-4-4Z"/>',
+  training:'<path d="m2 9 10-5 10 5-10 5Z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5M22 9v6"/>',
+  other:'<path d="M12 3 4 6v6c0 4.5 3.2 7.8 8 9 4.8-1.2 8-4.5 8-9V6Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/>'
+};
+const domainIcon = key => `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${domainIcons[key] || domainIcons.other}</svg>`;
 function countText(n) {
   if (state.lang !== 'ar') return `${n} ${n === 1 ? 'item' : 'items'}`;
   if (n === 1) return 'بند واحد';
@@ -187,13 +210,13 @@ function domainSummary(groups) {
 // A multi-select dropdown scales to any number of domains without taking up page space.
 function filterMenu(groups) {
   const rows = groups.map(({domain, all}) => `<label class="menu-row"><input type="checkbox" data-domain="${escape(domain.key)}"
-    ${state.selected.includes(domain.key) ? 'checked' : ''}><span>${localized(domain.name)}</span><span class="chip-count">${all.length}</span></label>`).join('');
+    ${state.selected.includes(domain.key) ? 'checked' : ''}><span class="menu-icon" aria-hidden="true">${domainIcon(domain.key)}</span><span class="menu-text">${localized(domain.name)}</span><span class="chip-count">${all.length}</span></label>`).join('');
   return `<div class="filter-menu"><button type="button" class="menu-toggle" data-action="menu" aria-haspopup="true"
     aria-expanded="${filterOpen}" aria-controls="domain-menu"><span class="menu-label">${t('filterBy')}</span>
     <span class="menu-value">${domainSummary(groups)}</span>
     <svg class="chev" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <div class="menu" id="domain-menu" role="group" aria-label="${t('filterBy')}" ${filterOpen ? '' : 'hidden'}>
-      <label class="menu-row"><input type="checkbox" data-domain-all ${state.selected.length ? '' : 'checked'}><span>${t('allDomains')}</span>
+      <label class="menu-row"><input type="checkbox" data-domain-all ${state.selected.length ? '' : 'checked'}><span class="menu-text">${t('allDomains')}</span>
         <span class="chip-count">${state.items.length}</span></label>${rows}</div></div>`;
 }
 function setMenu(open) {
@@ -205,9 +228,8 @@ function setMenu(open) {
 }
 
 function domainGroup({domain, shown}, order) {
-  const letter = gateLetter(domains.findIndex(d => d.key === domain.key));
   return `<section class="domain-group" aria-labelledby="dg-${escape(domain.key)}">
-    <div class="domain-head"><span class="gate" aria-hidden="true">${letter}</span>
+    <div class="domain-head"><span class="gate" aria-hidden="true">${domainIcon(domain.key)}</span>
       <div class="domain-title"><h3 id="dg-${escape(domain.key)}">${localized(domain.name)}</h3>
         ${domain.description ? `<p>${localized(domain.description)}</p>` : ''}</div>
       <span class="count-badge">${countText(shown.length)}</span></div>
@@ -256,7 +278,7 @@ function render() {
     <div class="toolbar">${filterMenu(groups)}<div class="tools">
       <label class="inline"><input type="checkbox" id="hide" ${state.hide?'checked':''}>${t('hide')}</label>
       <button type="button" data-action="plan">${t('plan')}<span class="chip-count">${gaps.length}</span></button>
-      ${button('add','add','','primary')}</div></div>
+</div></div>
     ${chosen.map(group => domainGroup(group, order)).join('') || `<p class="card muted">${t(items.length ? 'noMatch' : 'empty')}</p>`}`;
   if (animateEntrance && !reducedMotion.matches) flipCounters();
   animateEntrance = false;
@@ -312,16 +334,6 @@ function select(title, name, choices, value) {
   return `<label class="field">${title}<select name="${name}">${choices.map(key =>
     `<option value="${key}" ${key===value?'selected':''}>${t(key)}</option>`).join('')}</select></label>`;
 }
-// Form directions follow the field language, independent of the interface language.
-function bilingualFields(key, values, type) {
-  return `<div class="form-grid">${['en','ar'].map(lang => field(
-    `${t(key)} · ${lang==='en'?'English':'العربية'}`, `${key}-${lang}`, values?.[lang], type,
-    `required lang="${lang}" dir="${direction(lang)}"`)).join('')}</div>`;
-}
-function domainSelect(value) {
-  return `<label class="field">${t('domainField')}<select name="domainKey">${domains.map(domain =>
-    `<option value="${escape(domain.key)}" ${domain.key===value?'selected':''}>${localized(domain.name)}</option>`).join('')}</select></label>`;
-}
 function priorityFields(item) {
   return `<div class="form-grid">${select(t('risk'),'risk',['high','medium','low'],item?.risk || 'medium')}
     ${field(`${t('urgency')} · ${t('days')} (0 = ${t('immediate')})`,'days',item?.days ?? 14,'number','required min="0" step="1"')}</div>`;
@@ -332,47 +344,6 @@ function onSubmit(handler) {
     if (handler(new FormData(event.currentTarget),event.currentTarget) === false) return;
     modal.close();
     save();
-  });
-}
-
-// Both new and starter items use the same form and schema.
-function editItem(item) {
-  dialog(t(item?'edit':'add'),`<form>
-    ${field(t('id'),'id',item?.id,'text','required dir="ltr"')}${priorityFields(item)}
-    ${domainSelect(item?.domainKey)}
-    ${['title','question','example','actions','why'].map(key=>bilingualFields(key,item?.[key],key==='title'?'text':'textarea')).join('')}
-    ${bilingualFields('name',item?.standard?.name,'text')}
-    ${field(t('clause'),'clause',item?.standard?.clause,'text','required dir="ltr"')}
-    ${bilingualFields('excerpt',item?.standard?.excerpt,'textarea')}
-    ${select(t('type'),'type',['verified','paraphrase','unverified'],item?.standard?.type || 'unverified')}
-    ${field(t('url'),'url',item?.standard?.url,'url','dir="ltr"')}${field(t('publication'),'publicationUrl',item?.standard?.publicationUrl,'url','dir="ltr"')}${formButtons()}</form>`);
-  onSubmit((data,form) => {
-    const read = key => data.get(key).trim();
-    const id = read('id');
-    if (!id || state.items.some(other => other !== item && other.id.toLowerCase() === id.toLowerCase())) {
-      form.elements.id.setCustomValidity(id ? t('duplicate') : t('id'));
-      form.elements.id.reportValidity();
-      form.elements.id.oninput = () => form.elements.id.setCustomValidity('');
-      return false;
-    }
-    const url = webUrl(read('url'));
-    const publicationUrl = webUrl(read('publicationUrl'));
-    // Links are optional so an unverified source can be saved without one, but any link given must be a web URL.
-    const badUrl = read('url') && !url;
-    if (badUrl || (read('publicationUrl') && !publicationUrl)) {
-      const invalid = form.elements[badUrl ? 'url' : 'publicationUrl'];
-      invalid.setCustomValidity(t(badUrl ? 'url' : 'publication') + ' (https://)');
-      invalid.reportValidity();
-      invalid.oninput = () => invalid.setCustomValidity('');
-      return false;
-    }
-    const pair = key => ({en:read(key+'-en'),ar:read(key+'-ar')});
-    const values = {id,domainKey:read('domainKey'),risk:read('risk'),days:Number(read('days'))};
-    for (const key of ['title','question','example','actions','why']) values[key]=pair(key);
-    values.standard = {name:pair('name'),clause:read('clause'),excerpt:pair('excerpt'),type:read('type'),url,publicationUrl};
-    // Update only checklist fields so existing review outcomes and notes survive edits.
-    if (item) Object.assign(item,values);
-    else state.items.push(values);
   });
 }
 
@@ -430,17 +401,11 @@ document.addEventListener('click', event => {
     case 'menu': setMenu(!filterOpen); break;
     case 'plan': showPlan(); break;
     case 'close': modal.close(); break;
-    case 'add': editItem(); break;
-    case 'edit': editItem(item); break;
     case 'source': showSource(item); break;
     case 'outcome': editOutcome(item); break;
     case 'comment':
       dialog(t('comment'),`<form>${field(t('comment'),'comment',item.comment,'textarea','dir="auto"')}${formButtons()}</form>`);
       onSubmit(data=>{ item.comment = data.get('comment'); });
-      break;
-    case 'delete':
-      dialog(t('remove'),`<form><p>${t('confirm')}</p><bdi>${escape(item.id)}</bdi>${formButtons()}</form>`);
-      onSubmit(()=>{ state.items = state.items.filter(candidate=>candidate!==item); });
       break;
   }
 });

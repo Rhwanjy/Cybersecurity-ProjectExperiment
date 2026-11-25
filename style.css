@@ -82,9 +82,13 @@ h2 {
   font-size:22px;
   letter-spacing:-.01em;
 }
-h3 {
+h3,h4 {
+  margin:0;
   font-family:var(--display);
   font-size:17px;
+}
+h4 {
+  line-height:1.35;
 }
 
 /* Sky: drifting clouds behind everything, plus the flight path across the header. */
@@ -271,18 +275,16 @@ html[lang=ar] .metric span {
   background:linear-gradient(180deg,#16406b 0 49%,#0e3052 51% 100%);
   border-radius:8px;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
-  perspective:200px;
 }
 .metric.pass-tone strong { color:#6df0b5; }
 .metric.gap-tone strong { color:#ff9aa5; }
 .metric.uncertain-tone strong { color:#ffd666; }
 .metric.total-tone strong,.metric.reviewed-tone strong { color:#cfe6ff; }
 .metric strong.flip {
-  animation:flap .6s cubic-bezier(.3,.7,.2,1) both;
+  animation:flap .6s cubic-bezier(.3,.7,.2,1) backwards;
 }
 @keyframes flap {
-  0% { transform:rotateX(-90deg); opacity:0; }
-  100% { transform:rotateX(0); opacity:1; }
+  from { transform:perspective(240px) rotateX(-90deg); opacity:0; }
 }
 
 /* Progress shown as a plane taxiing along a runway */
@@ -434,8 +436,116 @@ html[lang=ar] .metric span {
 .card>.pass-head~* {
   margin-top:14px;
 }
-.card>.pass-head+h3 {
+.card>.pass-head+h4 {
   margin-top:22px;
+}
+
+/* Domain filter chips, sticky while the list scrolls */
+.domain-filter {
+  position:sticky;
+  inset-block-start:0;
+  z-index:6;
+  display:grid;
+  gap:8px;
+  margin:0 -10px 6px;
+  padding:12px 10px 10px;
+  background:rgba(238,247,255,.84);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+  border-radius:16px;
+}
+.filter-label {
+  font-weight:600;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  font-size:12px;
+}
+html[lang=ar] .filter-label {
+  letter-spacing:normal;
+  text-transform:none;
+  font-size:13px;
+}
+.chips {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.chips button {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.chip-count {
+  min-width:22px;
+  padding:1px 8px;
+  font-size:12px;
+  font-weight:700;
+  text-align:center;
+  color:var(--blue-deep);
+  background:var(--sky);
+  border-radius:999px;
+}
+.chips button[aria-pressed=true] .chip-count {
+  color:#fff;
+  background:rgba(255,255,255,.24);
+}
+
+/* Domain sections: a gate-sign banner above each group of boarding passes */
+.domain-group {
+  margin-block-start:22px;
+}
+.domain-group:first-of-type {
+  margin-block-start:10px;
+}
+.domain-head {
+  display:flex;
+  align-items:center;
+  gap:16px;
+  margin-bottom:14px;
+  padding:14px 18px;
+  color:#fff;
+  background:linear-gradient(calc(135deg * var(--dir)),#123a63,#0b2a4a);
+  border-radius:16px;
+  box-shadow:var(--shadow-lift);
+}
+.gate {
+  flex:none;
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  font-family:var(--mono);
+  font-size:24px;
+  font-weight:800;
+  color:var(--navy);
+  background:#ffd666;
+  border-radius:12px;
+  box-shadow:inset 0 -3px 0 rgba(11,42,74,.18);
+}
+.domain-title {
+  flex:1;
+  min-width:0;
+}
+.domain-title h3 {
+  font-size:19px;
+  color:#fff;
+}
+.domain-title p {
+  margin-top:3px;
+  font-size:14px;
+  color:#bcd3ec;
+}
+.count-badge {
+  flex:none;
+  padding:5px 12px;
+  font-size:13px;
+  font-weight:600;
+  color:#dcecff;
+  background:rgba(255,255,255,.12);
+  border-radius:999px;
+}
+.domain-group.enter,.domain-head {
+  animation:fade .45s ease both;
 }
 .gap>*+*,.register-body>*+* {
   margin-top:10px;
@@ -470,7 +580,7 @@ html[lang=ar] .metric span {
   background:var(--amber-bg);
 }
 .pill.flip {
-  animation:flap .6s cubic-bezier(.3,.7,.2,1) both;
+  animation:flap .6s cubic-bezier(.3,.7,.2,1) backwards;
 }
 .meta .pill {
   background:#f1f6fb;
@@ -734,6 +844,24 @@ bdi {
   }
   .flight {
     height:200px;
+  }
+}
+@media(max-width:600px) {
+  .domain-head {
+    flex-wrap:wrap;
+    gap:10px 14px;
+  }
+  .count-badge {
+    margin-inline-start:auto;
+  }
+  .chips {
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    padding-bottom:4px;
+    scrollbar-width:thin;
+  }
+  .chips button {
+    flex:none;
   }
 }
 @media(max-width:480px) {

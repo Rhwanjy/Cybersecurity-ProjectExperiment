@@ -1,0 +1,90 @@
+[
+  {
+    "key": "access",
+    "name": {
+      "en": "Access Control & Identity Management",
+      "ar": "إدارة الوصول والهوية"
+    },
+    "description": {
+      "en": "Who can reach which systems, and how they prove who they are.",
+      "ar": "من يمكنه الوصول إلى أي الأنظمة، وكيف يثبت هويته."
+    }
+  },
+  {
+    "key": "risk",
+    "name": {
+      "en": "Risk Management",
+      "ar": "إدارة المخاطر"
+    },
+    "description": {
+      "en": "Knowing which systems matter most and protecting them in proportion to the risk.",
+      "ar": "معرفة الأنظمة الأكثر أهمية وحمايتها بما يتناسب مع المخاطر."
+    }
+  },
+  {
+    "key": "network",
+    "name": {
+      "en": "Network & Infrastructure Security",
+      "ar": "أمن الشبكات والبنية التحتية"
+    },
+    "description": {
+      "en": "Firewalls, segmentation, and the safeguards on data in motion.",
+      "ar": "جدران الحماية وفصل الشبكات وضوابط حماية البيانات أثناء نقلها."
+    }
+  },
+  {
+    "key": "asset",
+    "name": {
+      "en": "Asset & Vulnerability Management",
+      "ar": "إدارة الأصول والثغرات"
+    },
+    "description": {
+      "en": "Knowing what exists, and fixing weaknesses before attackers find them.",
+      "ar": "معرفة ما هو موجود ومعالجة نقاط الضعف قبل أن يكتشفها المهاجمون."
+    }
+  },
+  {
+    "key": "incident",
+    "name": {
+      "en": "Incident Response & Business Continuity",
+      "ar": "الاستجابة للحوادث واستمرارية الأعمال"
+    },
+    "description": {
+      "en": "Detecting, containing, and recovering from an attack while operations continue.",
+      "ar": "اكتشاف الهجوم واحتواؤه والتعافي منه مع استمرار العمليات."
+    }
+  },
+  {
+    "key": "data",
+    "name": {
+      "en": "Data Protection & Encryption",
+      "ar": "حماية البيانات والتشفير"
+    },
+    "description": {
+      "en": "Safeguarding sensitive information at rest and in transit.",
+      "ar": "حماية المعلومات الحساسة أثناء تخزينها ونقلها."
+    }
+  },
+  {
+    "key": "vendor",
+    "name": {
+      "en": "Vendor & Supply Chain Risk",
+      "ar": "مخاطر الموردين وسلسلة التوريد"
+    },
+    "description": {
+      "en": "How well third parties that support critical systems protect them.",
+      "ar": "مدى حماية الأطراف الثالثة للأنظمة الحرجة التي تدعمها."
+    }
+  },
+  {
+    "key": "training",
+    "name": {
+      "en": "Awareness & Training",
+      "ar": "التوعية والتدريب"
+    },
+    "description": {
+      "en": "Making sure staff recognize threats and know their security duties.",
+      "ar": "ضمان قدرة الموظفين على اكتشاف التهديدات ومعرفة مسؤولياتهم الأمنية."
+    }
+  }
+]

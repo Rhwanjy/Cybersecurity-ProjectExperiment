@@ -29,9 +29,12 @@ const strings = {
   editGap:['Edit gap','تعديل الفجوة'], duplicate:['This item ID already exists.','معرّف البند مستخدم بالفعل.'],
   confirm:['Delete this item and its saved comments or gap?','هل تريد حذف هذا البند وتعليقاته أو فجوته المسجّلة؟'],
   loadError:['Could not load the checklist. Refresh to try again.','تعذّر تحميل القائمة. أعد تحميل الصفحة للمحاولة مرة أخرى.'],
-  storageError:['Browser storage is unavailable. Changes will only last while this page is open.','تخزين المتصفح غير متاح. تستمر التغييرات ما دامت هذه الصفحة مفتوحة.']
+  storageError:['Browser storage is unavailable. Changes will only last while this page is open.','تخزين المتصفح غير متاح. تستمر التغييرات ما دامت هذه الصفحة مفتوحة.'],
+  allDomains:['All domains','كل المجالات'], filterBy:['Filter by domain','التصفية حسب المجال'],
+  domainField:['Domain','المجال'], other:['Other','أخرى'],
+  noMatch:['No items in the selected domains match the current view.','لا توجد بنود مطابقة في المجالات المحددة.']
 };
-const storageKey = 'egyptair-audit-v1';
+const storageKey = 'egyptair-audit-v2';
 const modal = document.querySelector('#modal');
 const notice = document.querySelector('#notice');
 const rank = {high: 3, medium: 2, low: 1};
@@ -42,6 +45,12 @@ let openedDetails = new Set();
 let animateEntrance = true;
 // The item whose outcome or review state just changed gets a departure-board flip.
 let flipId = null;
+// Domain definitions load from data/domains.json on every visit; items reference them by key.
+let domains = [];
+// Filtering replays only the card entrance, not the counters or the runway.
+let animateCards = false;
+// Rerendering replaces every button, so remember which control to refocus afterward.
+let refocus = '';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 // Escape all user-entered text before inserting markup. Restrict references to web URLs.
@@ -61,11 +70,13 @@ function webUrl(value) {
 async function start() {
   try {
     try { state = JSON.parse(localStorage.getItem(storageKey)); } catch { storageFailed = true; }
-    if (!Array.isArray(state?.items)) {
-      const response = await fetch('./data/checklist.json');
-      if (!response.ok) throw new Error('Checklist fetch failed');
-      state = {lang:'en', hide:false, items:await response.json()};
-    }
+    const [domainResponse, itemResponse] = await Promise.all([
+      fetch('./data/domains.json'),
+      Array.isArray(state?.items) ? null : fetch('./data/checklist.json')]);
+    if (!domainResponse.ok || (itemResponse && !itemResponse.ok)) throw new Error('Checklist fetch failed');
+    domains = await domainResponse.json();
+    if (itemResponse) state = {lang:'en', hide:false, selected:[], items:await itemResponse.json()};
+    if (!Array.isArray(state.selected)) state.selected = [];
     render();
   } catch {
     notice.textContent = strings.loadError.join(' / ');
@@ -92,9 +103,9 @@ const riskKey = risk => rank[risk] ? risk : 'medium';
 
 // The checklist and register always render from the same item records.
 function card(item, index = 0) {
-  return `<article class="card ${animateEntrance ? 'enter' : ''}" data-risk="${riskKey(item.risk)}" style="--i:${Math.min(index, 8)}">
-    <div class="row pass-head"><small class="pass-id">${planeIcon}<bdi>${escape(item.id)}</bdi><span>· ${localized(item.domain)}</span></small>${status(item)}</div>
-    <h3>${localized(item.title)}</h3>
+  return `<article class="card ${animateEntrance || animateCards ? 'enter' : ''}" data-risk="${riskKey(item.risk)}" style="--i:${Math.min(index, 8)}">
+    <div class="row pass-head"><small class="pass-id">${planeIcon}<bdi>${escape(item.id)}</bdi></small>${status(item)}</div>
+    <h4>${localized(item.title)}</h4>
     <p class="question">${localized(item.question)}</p>
     <div class="meta">${badge('risk', t(item.risk))}${badge('urgency', deadline(item.days))}
       ${item.reviewed ? `<span class="pill">${t('reviewed')}</span>` : ''}</div>
@@ -113,6 +124,34 @@ function gapCard(item) {
     <h3>${localized(item.title)}</h3><div class="meta">${badge('risk',t(item.risk))}${badge('urgency',deadline(item.days))}</div>
     ${label('gapText',`<bdi>${escape(item.gapText)}</bdi>`)}${label('follow',`<bdi>${escape(item.follow)}</bdi>`)}
     ${button('outcome','editGap',item.id)}</article>`;
+}
+
+// Items point at a domain by key. Anything unmatched falls into an "Other" group instead of vanishing.
+const otherDomain = () => ({key:'other', name:{en:strings.other[0], ar:strings.other[1]}, description:null});
+const domainKeyOf = item => domains.some(d => d.key === item.domainKey) ? item.domainKey : 'other';
+const gateLetter = index => index < 0 ? '•' : String.fromCharCode(65 + index);
+function countText(n) {
+  if (state.lang !== 'ar') return `${n} ${n === 1 ? 'item' : 'items'}`;
+  if (n === 1) return 'بند واحد';
+  if (n === 2) return 'بندان';
+  return `${n} ${n <= 10 ? 'بنود' : 'بندًا'}`;
+}
+
+function domainFilter(groups) {
+  const chips = groups.map(({domain, all}) => `<button type="button" data-action="domain" data-id="${escape(domain.key)}"
+    aria-pressed="${state.selected.includes(domain.key)}">${localized(domain.name)}<span class="chip-count">${all.length}</span></button>`).join('');
+  return `<div class="domain-filter" role="group" aria-label="${t('filterBy')}"><small class="filter-label">${t('filterBy')}</small>
+    <div class="chips"><button type="button" data-action="domain-all" aria-pressed="${!state.selected.length}">${t('allDomains')}<span class="chip-count">${state.items.length}</span></button>${chips}</div></div>`;
+}
+
+function domainGroup({domain, shown}, order) {
+  const letter = gateLetter(domains.findIndex(d => d.key === domain.key));
+  return `<section class="domain-group" aria-labelledby="dg-${escape(domain.key)}">
+    <div class="domain-head"><span class="gate" aria-hidden="true">${letter}</span>
+      <div class="domain-title"><h3 id="dg-${escape(domain.key)}">${localized(domain.name)}</h3>
+        ${domain.description ? `<p>${localized(domain.description)}</p>` : ''}</div>
+      <span class="count-badge">${countText(shown.length)}</span></div>
+    ${shown.map(item => card(item, order.next++)).join('')}</section>`;
 }
 
 function render() {
@@ -144,16 +183,28 @@ function render() {
       style="--p:${items.length ? Math.round(reviewed / items.length * 100) : 0}%">
       <div class="runway-track"><div class="runway-fill ${animateEntrance ? 'grow' : ''}"></div></div>
       <span class="runway-plane ${animateEntrance ? 'grow' : ''}">${planeIcon}</span></div></div>`;
-  const visible = items.filter(i => !state.hide || !i.reviewed);
+  // Group items by domain in the order domains.json lists them. Empty domains get no chip or section.
+  const known = [...domains];
+  if (items.some(item => domainKeyOf(item) === 'other')) known.push(otherDomain());
+  const groups = known.map(domain => {
+    const all = items.filter(item => domainKeyOf(item) === domain.key);
+    return {domain, all, shown:all.filter(item => !state.hide || !item.reviewed)};
+  }).filter(group => group.all.length);
+  state.selected = state.selected.filter(key => groups.some(group => group.domain.key === key));
+  const chosen = groups.filter(group => (!state.selected.length || state.selected.includes(group.domain.key)) && group.shown.length);
+  const order = {next:0};
   document.querySelector('#checklist').innerHTML = `<div class="bar"><h2>${t('checklist')}</h2><div class="row">
     <label class="inline"><input type="checkbox" id="hide" ${state.hide?'checked':''}>${t('hide')}</label>
     ${button('add','add','','primary')}</div></div>
-    ${visible.map(card).join('') || `<p class="card muted">${t('empty')}</p>`}`;
+    ${domainFilter(groups)}
+    ${chosen.map(group => domainGroup(group, order)).join('') || `<p class="card muted">${t(items.length ? 'noMatch' : 'empty')}</p>`}`;
   document.querySelector('#register').innerHTML = `<div class="register-box"><h2>${t('register')}</h2>
     <div class="register-body"><p class="muted">${t('order')}</p>${gaps.map(gapCard).join('') || `<p class="muted">${t('noGaps')}</p>`}</div></div>`;
   if (animateEntrance && !reducedMotion.matches) flipCounters();
   animateEntrance = false;
+  animateCards = false;
   flipId = null;
+  if (refocus) { document.querySelector(refocus)?.focus(); refocus = ''; }
 }
 
 // Metric tiles tick up from zero like a departure board settling on its values.
@@ -207,6 +258,10 @@ function bilingualFields(key, values, type) {
     `${t(key)} · ${lang==='en'?'English':'العربية'}`, `${key}-${lang}`, values?.[lang], type,
     `required lang="${lang}" dir="${direction(lang)}"`)).join('')}</div>`;
 }
+function domainSelect(value) {
+  return `<label class="field">${t('domainField')}<select name="domainKey">${domains.map(domain =>
+    `<option value="${escape(domain.key)}" ${domain.key===value?'selected':''}>${localized(domain.name)}</option>`).join('')}</select></label>`;
+}
 function priorityFields(item) {
   return `<div class="form-grid">${select(t('risk'),'risk',['high','medium','low'],item?.risk || 'medium')}
     ${field(`${t('urgency')} · ${t('days')} (0 = ${t('immediate')})`,'days',item?.days ?? 14,'number','required min="0" step="1"')}</div>`;
@@ -224,12 +279,13 @@ function onSubmit(handler) {
 function editItem(item) {
   dialog(t(item?'edit':'add'),`<form>
     ${field(t('id'),'id',item?.id,'text','required dir="ltr"')}${priorityFields(item)}
-    ${['title','domain','question','example','actions','why'].map(key=>bilingualFields(key,item?.[key],['title','domain'].includes(key)?'text':'textarea')).join('')}
+    ${domainSelect(item?.domainKey)}
+    ${['title','question','example','actions','why'].map(key=>bilingualFields(key,item?.[key],key==='title'?'text':'textarea')).join('')}
     ${bilingualFields('name',item?.standard?.name,'text')}
     ${field(t('clause'),'clause',item?.standard?.clause,'text','required dir="ltr"')}
     ${bilingualFields('excerpt',item?.standard?.excerpt,'textarea')}
     ${select(t('type'),'type',['verified','paraphrase','unverified'],item?.standard?.type || 'unverified')}
-    ${field(t('url'),'url',item?.standard?.url,'url','required dir="ltr"')}${field(t('publication'),'publicationUrl',item?.standard?.publicationUrl,'url','dir="ltr"')}${formButtons()}</form>`);
+    ${field(t('url'),'url',item?.standard?.url,'url','dir="ltr"')}${field(t('publication'),'publicationUrl',item?.standard?.publicationUrl,'url','dir="ltr"')}${formButtons()}</form>`);
   onSubmit((data,form) => {
     const read = key => data.get(key).trim();
     const id = read('id');
@@ -241,16 +297,18 @@ function editItem(item) {
     }
     const url = webUrl(read('url'));
     const publicationUrl = webUrl(read('publicationUrl'));
-    if (!url || (read('publicationUrl') && !publicationUrl)) {
-      const invalid = form.elements[url ? 'publicationUrl' : 'url'];
-      invalid.setCustomValidity(t(url ? 'publication' : 'url') + ' (https://)');
+    // Links are optional so an unverified source can be saved without one, but any link given must be a web URL.
+    const badUrl = read('url') && !url;
+    if (badUrl || (read('publicationUrl') && !publicationUrl)) {
+      const invalid = form.elements[badUrl ? 'url' : 'publicationUrl'];
+      invalid.setCustomValidity(t(badUrl ? 'url' : 'publication') + ' (https://)');
       invalid.reportValidity();
       invalid.oninput = () => invalid.setCustomValidity('');
       return false;
     }
     const pair = key => ({en:read(key+'-en'),ar:read(key+'-ar')});
-    const values = {id,risk:read('risk'),days:Number(read('days'))};
-    for (const key of ['title','domain','question','example','actions','why']) values[key]=pair(key);
+    const values = {id,domainKey:read('domainKey'),risk:read('risk'),days:Number(read('days'))};
+    for (const key of ['title','question','example','actions','why']) values[key]=pair(key);
     values.standard = {name:pair('name'),clause:read('clause'),excerpt:pair('excerpt'),type:read('type'),url,publicationUrl};
     // Update only checklist fields so existing review outcomes and notes survive edits.
     if (item) Object.assign(item,values);
@@ -308,6 +366,12 @@ document.addEventListener('click', event => {
   const item = state.items.find(candidate=>candidate.id===id);
   switch (action) {
     case 'lang': if (state.lang !== id) animateEntrance = true; state.lang = id; save(); break;
+    case 'domain':
+      // Chips toggle independently so several domains can be shown together.
+      state.selected = state.selected.includes(id) ? state.selected.filter(key => key !== id) : [...state.selected, id];
+      animateCards = true; refocus = `button[data-action="domain"][data-id="${id}"]`; save(); break;
+    case 'domain-all':
+      state.selected = []; animateCards = true; refocus = 'button[data-action="domain-all"]'; save(); break;
     case 'close': modal.close(); break;
     case 'add': editItem(); break;
     case 'edit': editItem(item); break;

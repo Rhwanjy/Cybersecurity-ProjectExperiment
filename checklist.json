@@ -1,0 +1,322 @@
+[
+  {
+    "id": "AV-001",
+    "domainKey": "access",
+    "risk": "high",
+    "days": 0,
+    "title": {
+      "en": "Control remote access to critical aviation systems",
+      "ar": "التحكم في الوصول عن بُعد إلى أنظمة الطيران الحرجة"
+    },
+    "question": {
+      "en": "How does EgyptAir control who can remotely access critical aviation systems and when that access ends?",
+      "ar": "كيف تتحكم مصر للطيران في من يحق له الوصول عن بُعد إلى أنظمة الطيران الحرجة، ومتى ينتهي هذا الوصول؟"
+    },
+    "example": {
+      "en": "For example, suppose a vendor needs to connect from outside EgyptAir to troubleshoot a maintenance system. Who decides what the vendor can access, and how do you make sure that access ends when the job is done?",
+      "ar": "على سبيل المثال، لنفترض أن أحد الموردين يحتاج إلى الاتصال من خارج مصر للطيران لإصلاح عطل في نظام الصيانة. من يقرر ما يمكن للمورد الوصول إليه، وكيف تتأكدون من انتهاء هذا الوصول عند إنجاز العمل؟"
+    },
+    "actions": {
+      "en": "Verify. Ask the client to choose one system with remote access and explain how access is approved, limited, and removed. Ask what record would show this. If a gap is found. Remove unnecessary access, correct the approval or expiry process, and verify the change.",
+      "ar": "تحقّق: اطلب من العميل اختيار نظام واحد يتيح الوصول عن بُعد وشرح كيفية اعتماد الوصول وتقييده وإلغائه، ثم اسأل عن السجل الذي يثبت ذلك. عند وجود فجوة: أزل الوصول غير الضروري، وصحّح آلية الاعتماد أو انتهاء الصلاحية، وتحقق من التغيير."
+    },
+    "why": {
+      "en": "Unnecessary remote access creates a path into systems that support aviation operations.",
+      "ar": "الوصول غير الضروري عن بُعد يفتح مسارًا إلى الأنظمة التي تدعم عمليات الطيران."
+    },
+    "standard": {
+      "name": {
+        "en": "ICAO Annex 17 — Aviation Security",
+        "ar": "ملحق الإيكاو 17 — أمن الطيران"
+      },
+      "clause": "4.9.2 (Recommended Practice)",
+      "excerpt": {
+        "en": "Protection or limitation of remote access",
+        "ar": "حماية الوصول عن بُعد أو تقييده"
+      },
+      "type": "paraphrase",
+      "url": "",
+      "publicationUrl": ""
+    }
+  },
+  {
+    "id": "AV-002",
+    "domainKey": "risk",
+    "risk": "high",
+    "days": 14,
+    "title": {
+      "en": "Identify critical aviation systems and protect them based on risk",
+      "ar": "تحديد أنظمة الطيران الحرجة وحمايتها بحسب المخاطر"
+    },
+    "question": {
+      "en": "Has EgyptAir identified its critical systems and data, assessed the cyber risks to them, and put safeguards in place based on that assessment?",
+      "ar": "هل حددت مصر للطيران أنظمتها وبياناتها الحرجة، وقيّمت المخاطر السيبرانية عليها، وطبّقت ضوابط حماية بناءً على هذا التقييم؟"
+    },
+    "example": {
+      "en": "Take your baggage tracking system. Is it or any of its data considered critical? If so, has your team assessed the risk of losing access to the baggage records, and what safeguard is in place?",
+      "ar": "لنأخذ نظام تتبّع الأمتعة. هل يُعد النظام أو أي من بياناته حرجًا؟ إذا كان كذلك، فهل قيّم فريقكم خطر فقدان الوصول إلى سجلات الأمتعة، وما الضابط المطبّق لمواجهته؟"
+    },
+    "actions": {
+      "en": "Verify. Ask the client to pick one critical system. Check its inventory entry, the risks assessed for it, and evidence that a safeguard was implemented for one of those risks. If a gap is found. Update the inventory or risk assessment as needed. Assign an owner and due date for any missing safeguard.",
+      "ar": "تحقّق: اطلب من العميل اختيار نظام حرج واحد. راجع بنده في سجل الأصول، والمخاطر التي جرى تقييمها له، ودليل تطبيق ضابط حماية لأحد هذه المخاطر. عند وجود فجوة: حدّث سجل الأصول أو تقييم المخاطر عند الحاجة، وعيّن مسؤولًا وموعدًا نهائيًا لأي ضابط ناقص."
+    },
+    "why": {
+      "en": "A critical system or its data can be overlooked during risk assessment and left without appropriate protection.",
+      "ar": "قد يُغفل نظام حرج أو بياناته أثناء تقييم المخاطر فيُترك دون حماية مناسبة."
+    },
+    "standard": {
+      "name": {
+        "en": "ICAO Annex 17 — Aviation Security",
+        "ar": "ملحق الإيكاو 17 — أمن الطيران"
+      },
+      "clause": "4.9.1 (Standard)",
+      "excerpt": {
+        "en": "Identification of critical ICT systems and data, and implementation of risk-based protections",
+        "ar": "تحديد نظم تكنولوجيا المعلومات والاتصالات الحرجة وبياناتها وتطبيق حماية قائمة على المخاطر"
+      },
+      "type": "paraphrase",
+      "url": "",
+      "publicationUrl": ""
+    }
+  },
+  {
+    "id": "AV-003",
+    "domainKey": "vendor",
+    "risk": "high",
+    "days": 90,
+    "title": {
+      "en": "Set and verify cybersecurity requirements for suppliers that support critical airline systems",
+      "ar": "تحديد متطلبات الأمن السيبراني للموردين الذين يدعمون أنظمة الطيران الحرجة والتحقق منها"
+    },
+    "question": {
+      "en": "Do you require suppliers that support critical airline systems to follow specific cybersecurity standards or safeguards, and do you check that they meet those requirements?",
+      "ar": "هل تُلزمون الموردين الذين يدعمون أنظمة شركة الطيران الحرجة باتباع معايير أو ضوابط أمن سيبراني محددة، وهل تتحققون من استيفائهم لهذه المتطلبات؟"
+    },
+    "example": {
+      "en": "Say a supplier runs your baggage tracking system. What cybersecurity requirements do you include in their contract? For example, do you specify a standard they must follow or require them to encrypt data when it’s stored or shared?",
+      "ar": "لنفترض أن أحد الموردين يشغّل نظام تتبّع الأمتعة لديكم. ما متطلبات الأمن السيبراني التي تضمّنونها عقده؟ على سبيل المثال، هل تحددون معيارًا يجب اتباعه أو تشترطون تشفير البيانات عند تخزينها أو مشاركتها؟"
+    },
+    "actions": {
+      "en": "Verify. Ask the client to pick one supplier supporting a critical system. Check the contract or security agreement for what the supplier must report, who receives the notice, and when it is due. If there’s a gap. Add or clarify the reporting terms and confirm that both parties have current incident contact details.",
+      "ar": "تحقّق: اطلب من العميل اختيار مورد واحد يدعم نظامًا حرجًا. راجع العقد أو اتفاقية الأمان لمعرفة ما يجب على المورد الإبلاغ عنه، ومن يتلقى الإشعار، وموعد تقديمه. عند وجود فجوة: أضف شروط الإبلاغ أو وضّحها، وتأكد من أن لدى الطرفين بيانات اتصال حديثة للتعامل مع الحوادث."
+    },
+    "why": {
+      "en": "A delayed supplier alert can leave EgyptAir unaware that a critical system or its data may have been compromised, delaying investigation and containment.",
+      "ar": "قد يؤدي تأخر تنبيه المورد إلى بقاء مصر للطيران غير مدركة لاحتمال اختراق نظام حرج أو بياناته، مما يؤخر التحقيق والاحتواء."
+    },
+    "standard": {
+      "name": {
+        "en": "ICAO Annex 17 — Aviation Security",
+        "ar": "ملحق الإيكاو 17 — أمن الطيران"
+      },
+      "clause": "4.9.2 (Recommended Practice)",
+      "excerpt": {
+        "en": "Supply chain security",
+        "ar": "أمن سلسلة التوريد"
+      },
+      "type": "paraphrase",
+      "url": "",
+      "publicationUrl": ""
+    }
+  },
+  {
+    "id": "AV-004",
+    "domainKey": "network",
+    "risk": "high",
+    "days": 14,
+    "title": {
+      "en": "Block traffic between network zones by default and allow only approved connections to critical aviation systems",
+      "ar": "حظر الاتصال بين مناطق الشبكة افتراضيًا والسماح فقط بالاتصالات المعتمدة بأنظمة الطيران الحرجة"
+    },
+    "question": {
+      "en": "Do your firewall rules block traffic between network zones by default and allow only approved connections to critical aviation systems?",
+      "ar": "هل تحظر قواعد جدار الحماية لديكم حركة البيانات بين مناطق الشبكة افتراضيًا، وتسمح فقط بالاتصالات المعتمدة بأنظمة الطيران الحرجة؟"
+    },
+    "example": {
+      "en": "When a bag is checked in, the check-in system needs to send the bag tag number to the baggage tracking system. Do your firewall rules allow that specific connection while blocking the check-in system from connecting directly to the baggage database?",
+      "ar": "عند تسجيل حقيبة، يحتاج نظام التسجيل إلى إرسال رقم بطاقة الحقيبة إلى نظام تتبّع الأمتعة. هل تسمح قواعد جدار الحماية بهذا الاتصال تحديدًا مع منع نظام التسجيل من الاتصال مباشرة بقاعدة بيانات الأمتعة؟"
+    },
+    "actions": {
+      "en": "Verify verbally. Ask the TA two yes/no questions. “Is the check-in system allowed to send baggage tag data to the baggage tracking application?” and “Is the check-in system blocked from connecting directly to the baggage database?” If a gap is found. Record which connection is missing or too permissive. Assign the network team to adjust the firewall rule and confirm that the required connection works and direct database access is blocked.",
+      "ar": "تحقّق شفهيًا: اطرح على المعيد (TA) سؤالين بنعم/لا: «هل يُسمح لنظام التسجيل بإرسال بيانات بطاقة الحقيبة إلى تطبيق تتبّع الأمتعة؟» و«هل يُمنع نظام التسجيل من الاتصال مباشرة بقاعدة بيانات الأمتعة؟». عند وجود فجوة: سجّل الاتصال المفقود أو المفرط في السماح، وكلّف فريق الشبكات بتعديل قاعدة جدار الحماية والتأكد من عمل الاتصال المطلوب ومنع الوصول المباشر إلى قاعدة البيانات."
+    },
+    "why": {
+      "en": "If the check-in system is compromised, restricting its network access can limit an attacker’s ability to reach baggage records.",
+      "ar": "إذا جرى اختراق نظام التسجيل، فإن تقييد وصوله إلى الشبكة يحدّ من قدرة المهاجم على الوصول إلى سجلات الأمتعة."
+    },
+    "standard": {
+      "name": {
+        "en": "ICAO Annex 17 — Aviation Security",
+        "ar": "ملحق الإيكاو 17 — أمن الطيران"
+      },
+      "clause": "4.9.2 (Recommended Practice)",
+      "excerpt": {
+        "en": "Network separation",
+        "ar": "فصل الشبكات"
+      },
+      "type": "paraphrase",
+      "url": "",
+      "publicationUrl": ""
+    }
+  },
+  {
+    "id": "AV-005",
+    "domainKey": "access",
+    "risk": "high",
+    "days": 0,
+    "title": {
+      "en": "Verify a new employee’s identity before creating their account and registering their sign-in credentials",
+      "ar": "التحقق من هوية الموظف الجديد قبل إنشاء حسابه وتسجيل بيانات دخوله"
+    },
+    "question": {
+      "en": "Before creating an account for a critical airline system, do you verify the employee’s identity?",
+      "ar": "قبل إنشاء حساب على نظام حرج في شركة الطيران، هل تتحققون من هوية الموظف؟"
+    },
+    "example": {
+      "en": "Say a new airport operations employee needs an account. Does IT confirm their identity through HR’s onboarding process before creating the account? Is the employee’s security key or authenticator app then registered to that account?",
+      "ar": "لنفترض أن موظفًا جديدًا في عمليات المطار يحتاج إلى حساب. هل تؤكد إدارة تقنية المعلومات هويته عبر عملية التعيين لدى الموارد البشرية قبل إنشاء الحساب؟ وهل يُسجَّل بعد ذلك مفتاح الأمان أو تطبيق المصادقة الخاص بالموظف على هذا الحساب؟"
+    },
+    "actions": {
+      "en": "Verify verbally. Ask the TA whether IT uses a verified HR record to create the account in an identity tool such as Microsoft Entra ID, and whether credential registration is tied to that account. Record both answers. If a gap is found, require identity verification before account activation and correct any credentials linked to the wrong account.",
+      "ar": "تحقّق شفهيًا: اسأل المعيد (TA) هل تستخدم إدارة تقنية المعلومات سجلًا موثّقًا من الموارد البشرية لإنشاء الحساب في أداة إدارة الهوية مثل Microsoft Entra ID، وهل يرتبط تسجيل بيانات الاعتماد بهذا الحساب. سجّل الإجابتين. عند وجود فجوة: اشترط التحقق من الهوية قبل تفعيل الحساب، وصحّح أي بيانات اعتماد مرتبطة بحساب خاطئ."
+    },
+    "why": {
+      "en": "If an account is issued to the wrong person or linked to the wrong credential, that person could gain access under another employee’s identity.",
+      "ar": "إذا صدر حساب لشخص خطأ أو ارتبط ببيانات اعتماد خاطئة، فقد يتمكن ذلك الشخص من الدخول بهوية موظف آخر."
+    },
+    "standard": {
+      "name": {
+        "en": "NIST Cybersecurity Framework (CSF) 2.0",
+        "ar": "إطار الأمن السيبراني من NIST (الإصدار 2.0)"
+      },
+      "clause": "PR.AA-02",
+      "excerpt": {
+        "en": "Verify identities and link credentials to the verified identity",
+        "ar": "التحقق من الهويات وربط بيانات الاعتماد بالهوية الموثّقة"
+      },
+      "type": "paraphrase",
+      "url": "",
+      "publicationUrl": ""
+    }
+  },
+  {
+    "id": "AV-006",
+    "domainKey": "access",
+    "risk": "high",
+    "days": 14,
+    "title": {
+      "en": "Require multifactor authentication (MFA) for staff signing in to critical airline systems (authenticate users)",
+      "ar": "اشتراط المصادقة متعددة العوامل (MFA) للموظفين عند الدخول إلى أنظمة الطيران الحرجة (مصادقة المستخدمين)"
+    },
+    "question": {
+      "en": "Is MFA required for staff signing in to critical airline systems, including when they sign in remotely?",
+      "ar": "هل تُشترط المصادقة متعددة العوامل للموظفين عند الدخول إلى أنظمة الطيران الحرجة، بما في ذلك الدخول عن بُعد؟"
+    },
+    "example": {
+      "en": "Say a staff member signs in remotely to the baggage tracking system. If they enter the correct password but skip the second step, such as using a security key or an authenticator app, is access blocked?",
+      "ar": "لنفترض أن أحد الموظفين يسجّل الدخول عن بُعد إلى نظام تتبّع الأمتعة. إذا أدخل كلمة المرور الصحيحة وتخطى الخطوة الثانية، مثل استخدام مفتاح أمان أو تطبيق مصادقة، فهل يُحظر دخوله؟"
+    },
+    "actions": {
+      "en": "Verify verbally. Ask the TA which sign-in tool enforces MFA, such as Microsoft Entra ID or Okta. Confirm whether MFA is mandatory for staff, whether it also covers remote access, and whether any accounts are exempt. If a gap is found, assign the identity and access management team to enforce MFA on the affected sign-in path and confirm that a password alone cannot grant access.",
+      "ar": "تحقّق شفهيًا: اسأل المعيد (TA) عن أداة تسجيل الدخول التي تفرض المصادقة متعددة العوامل، مثل Microsoft Entra ID أو Okta. تأكد من أن المصادقة إلزامية للموظفين، وأنها تشمل الدخول عن بُعد، وهل توجد حسابات مستثناة. عند وجود فجوة: كلّف فريق إدارة الهوية والوصول بفرض المصادقة على مسار الدخول المعني والتأكد من أن كلمة المرور وحدها لا تمنح الوصول."
+    },
+    "why": {
+      "en": "Staff accounts can access passenger data and operational records. MFA is critical because a stolen password could otherwise let an attacker sign in as an employee, view passenger data, or change records the airline relies on.",
+      "ar": "تتيح حسابات الموظفين الوصول إلى بيانات الركاب والسجلات التشغيلية. وتبرز أهمية المصادقة متعددة العوامل لأن سرقة كلمة المرور وحدها قد تمكّن مهاجمًا من الدخول بصفة موظف، والاطلاع على بيانات الركاب، أو تعديل سجلات تعتمد عليها الشركة."
+    },
+    "standard": {
+      "name": {
+        "en": "NIST Cybersecurity Framework (CSF) 2.0",
+        "ar": "إطار الأمن السيبراني من NIST (الإصدار 2.0)"
+      },
+      "clause": "PR.AA-03",
+      "excerpt": {
+        "en": "Users are authenticated",
+        "ar": "مصادقة المستخدمين"
+      },
+      "type": "paraphrase",
+      "url": "",
+      "publicationUrl": ""
+    }
+  },
+  {
+    "id": "AV-007",
+    "domainKey": "access",
+    "risk": "high",
+    "days": 14,
+    "title": {
+      "en": "Authenticate applications",
+      "ar": "مصادقة التطبيقات"
+    },
+    "question": {
+      "en": "Do critical airline systems authenticate the applications that connect to them, using a service credential such as a client certificate?",
+      "ar": "هل تتحقق أنظمة الطيران الحرجة من هوية التطبيقات التي تتصل بها باستخدام بيانات اعتماد للخدمة، مثل شهادة العميل؟"
+    },
+    "example": {
+      "en": "Say the check-in system sends bag tag data to the baggage tracking system. Does the baggage system reject the request if the check-in service cannot present a valid credential?",
+      "ar": "لنفترض أن نظام التسجيل يرسل بيانات بطاقة الحقيبة إلى نظام تتبّع الأمتعة. هل يرفض نظام الأمتعة الطلب إذا لم تقدّم خدمة التسجيل بيانات اعتماد صالحة؟"
+    },
+    "actions": {
+      "en": "Verify verbally. Ask whether the receiving system checks the calling service’s credential and rejects requests when it is missing or invalid. If a gap is found, assign the application team to enforce service authentication and test that invalid requests are rejected.",
+      "ar": "تحقّق شفهيًا: اسأل هل يفحص النظام المستقبِل بيانات اعتماد الخدمة المتصلة ويرفض الطلبات عند غيابها أو عدم صلاحيتها. عند وجود فجوة: كلّف فريق التطبيقات بفرض مصادقة الخدمات واختبار رفض الطلبات غير الصالحة."
+    },
+    "why": {
+      "en": "Airline systems rely on data sent by other applications. Service authentication is critical because an unauthorized application could impersonate a trusted system and submit false data.",
+      "ar": "تعتمد أنظمة الطيران على بيانات ترسلها تطبيقات أخرى. وتبرز أهمية مصادقة الخدمات لأن تطبيقًا غير مصرّح له قد ينتحل صفة نظام موثوق ويرسل بيانات مزيفة."
+    },
+    "standard": {
+      "name": {
+        "en": "NIST Cybersecurity Framework (CSF) 2.0",
+        "ar": "إطار الأمن السيبراني من NIST (الإصدار 2.0)"
+      },
+      "clause": "PR.AA-03",
+      "excerpt": {
+        "en": "Services are authenticated",
+        "ar": "مصادقة الخدمات"
+      },
+      "type": "paraphrase",
+      "url": "",
+      "publicationUrl": ""
+    }
+  },
+  {
+    "id": "AV-008",
+    "domainKey": "access",
+    "risk": "high",
+    "days": 14,
+    "title": {
+      "en": "Authenticate devices",
+      "ar": "مصادقة الأجهزة"
+    },
+    "question": {
+      "en": "Do your restricted airline networks verify a device’s identity before allowing it to connect? Is access denied if the device fails that check?",
+      "ar": "هل تتحقق شبكات الطيران المقيَّدة لديكم من هوية الجهاز قبل السماح له بالاتصال؟ وهل يُرفض الوصول إذا فشل الجهاز في هذا الفحص؟"
+    },
+    "example": {
+      "en": "If someone plugs a laptop without a valid device certificate into a network port in the baggage operations area, does a control such as certificate-based 802.1X block it from joining the restricted network?",
+      "ar": "إذا وصل شخص حاسوبًا محمولًا لا يملك شهادة جهاز صالحة بمنفذ شبكة في منطقة عمليات الأمتعة، فهل يمنعه ضابط مثل 802.1X المعتمد على الشهادات من الانضمام إلى الشبكة المقيَّدة؟"
+    },
+    "actions": {
+      "en": "Verify verbally. Ask the TA whether the network checks device credentials on restricted network ports and what happens when a device fails authentication. If there’s a gap, assign the network team to enforce device authentication and test that a device without a valid credential cannot join the restricted network",
+      "ar": "تحقّق شفهيًا: اسأل المعيد (TA) هل تفحص الشبكة بيانات اعتماد الأجهزة على منافذ الشبكة المقيَّدة، وماذا يحدث عند فشل مصادقة الجهاز. عند وجود فجوة: كلّف فريق الشبكات بفرض مصادقة الأجهزة واختبار عدم قدرة جهاز بلا بيانات اعتماد صالحة على الانضمام إلى الشبكة المقيَّدة."
+    },
+    "why": {
+      "en": "Restricted networks give devices a path to operational systems. Device authentication is critical because an unauthorized laptop connected to a network port could otherwise gain that foothold and attempt to access or disrupt those systems.",
+      "ar": "تمنح الشبكات المقيَّدة الأجهزة مسارًا إلى الأنظمة التشغيلية. وتبرز أهمية مصادقة الأجهزة لأن حاسوبًا محمولًا غير مصرّح له يُوصَّل بمنفذ شبكة قد يحصل على موطئ قدم ويحاول الوصول إلى تلك الأنظمة أو تعطيلها."
+    },
+    "standard": {
+      "name": {
+        "en": "NIST Cybersecurity Framework (CSF) 2.0",
+        "ar": "إطار الأمن السيبراني من NIST (الإصدار 2.0)"
+      },
+      "clause": "PR.AA-03",
+      "excerpt": {
+        "en": "Hardware is authenticated",
+        "ar": "مصادقة العتاد"
+      },
+      "type": "paraphrase",
+      "url": "",
+      "publicationUrl": ""
+    }
+  }
+]

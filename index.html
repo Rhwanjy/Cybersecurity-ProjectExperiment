@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#dff0ff">
+  <meta name="theme-color" content="#bcd8f2">
   <title>EgyptAir | Cybersecurity Audit Checklist</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,10 +54,50 @@
 
   <!-- Static shell keeps landmarks and navigation accessible before data loads. -->
   <main>
+    <!-- Globe emblem: meridians turn, and a plane circles the orbit, passing behind the globe on the far side. -->
+    <div class="emblem" aria-hidden="true">
+      <svg viewBox="0 0 220 200" focusable="false">
+        <defs>
+          <radialGradient id="globeFill" cx="34%" cy="28%" r="85%">
+            <stop offset="0" stop-color="#cfe8ff"/><stop offset=".5" stop-color="#5ba7ee"/><stop offset="1" stop-color="#1b5cb4"/>
+          </radialGradient>
+          <clipPath id="globeClip"><circle cx="110" cy="100" r="56"/></clipPath>
+          <path id="orbit" d="M12 100 a98 28 0 1 1 196 0 a98 28 0 1 1 -196 0"/>
+        </defs>
+        <g transform="rotate(-18 110 100)">
+          <use href="#orbit" class="orbit-ring"/>
+          <!-- Far half of the orbit: the plane is drawn under the globe and hidden when it passes behind it. -->
+          <g color="#0b2a4a" opacity=".55">
+            <use href="#plane" width="26" height="26" x="-13" y="-13"/>
+            <animateMotion dur="14s" repeatCount="indefinite" rotate="auto"><mpath href="#orbit"/></animateMotion>
+            <animate attributeName="opacity" dur="14s" repeatCount="indefinite" calcMode="discrete" values=".55;0" keyTimes="0;.5"/>
+          </g>
+        </g>
+        <circle cx="110" cy="100" r="56" fill="url(#globeFill)"/>
+        <g clip-path="url(#globeClip)" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.2">
+          <ellipse class="m m1" cx="110" cy="100" rx="56" ry="56"/>
+          <ellipse class="m m2" cx="110" cy="100" rx="56" ry="56"/>
+          <ellipse class="m m3" cx="110" cy="100" rx="56" ry="56"/>
+          <ellipse class="m m4" cx="110" cy="100" rx="56" ry="56"/>
+          <path d="M50 100 H170"/><path d="M52 76 Q110 88 168 76"/><path d="M52 124 Q110 136 168 124"/>
+          <path d="M66 54 Q110 64 154 54"/><path d="M66 146 Q110 156 154 146"/>
+        </g>
+        <ellipse cx="90" cy="70" rx="22" ry="12" fill="#fff" opacity=".22" transform="rotate(-30 90 70)"/>
+        <circle cx="110" cy="100" r="56" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+        <g transform="rotate(-18 110 100)">
+          <!-- Near half of the orbit: the plane is drawn over the globe. -->
+          <g color="#0b2a4a" opacity="0">
+            <use href="#plane" width="26" height="26" x="-13" y="-13"/>
+            <animateMotion dur="14s" repeatCount="indefinite" rotate="auto"><mpath href="#orbit"/></animateMotion>
+            <animate attributeName="opacity" dur="14s" repeatCount="indefinite" calcMode="discrete" values="0;1" keyTimes="0;.5"/>
+          </g>
+        </g>
+      </svg>
+    </div>
     <header id="hero"></header>
     <p id="notice" role="status" hidden></p>
     <section id="summary"></section>
-    <div class="workspace"><section id="checklist"></section><aside id="register"></aside></div>
+    <section id="checklist"></section>
   </main>
   <dialog id="modal" aria-labelledby="dialog-title"></dialog>
 </body>

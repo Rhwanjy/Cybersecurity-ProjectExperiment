@@ -3,9 +3,10 @@
 :root {
   color-scheme:light;
   --dir:1;
-  --bg:#eef7ff;
+  --bg:#d6e7f8;
+  --notch:#d9e8f8;
   --panel:#ffffff;
-  --line:#cfe0f1;
+  --line:#b3cde6;
   --line-soft:#e3eef9;
   --ink:#0c2744;
   --muted:#4b647d;
@@ -20,8 +21,8 @@
   --green:#0b7a55;
   --green-bg:#dcf6ea;
   --accent:var(--blue);
-  --shadow:0 1px 2px rgba(12,39,68,.06),0 10px 26px -12px rgba(12,39,68,.22);
-  --shadow-lift:0 2px 4px rgba(12,39,68,.08),0 18px 36px -14px rgba(12,39,68,.3);
+  --shadow:0 1px 2px rgba(12,39,68,.1),0 14px 30px -12px rgba(12,39,68,.34);
+  --shadow-lift:0 2px 5px rgba(12,39,68,.12),0 22px 42px -14px rgba(12,39,68,.42);
   --display:Outfit,Cairo,system-ui,sans-serif;
   --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
   font-family:Inter,Cairo,system-ui,sans-serif;
@@ -41,13 +42,13 @@ html[lang=ar] {
 body {
   margin:0;
   min-height:100vh;
-  background:linear-gradient(180deg,#cfe8ff 0,#e6f3ff 360px,#f5faff 100%) fixed;
+  background:linear-gradient(180deg,#b7d5f1 0,#d1e4f6 420px,#deecf9 100%) fixed;
   overflow-x:hidden;
 }
 main {
   position:relative;
   z-index:1;
-  max-width:1420px;
+  max-width:1080px;
   padding:36px clamp(18px,4vw,64px) 72px;
   margin:auto;
 }
@@ -153,16 +154,13 @@ html[dir=rtl] .flight svg {
 
 /* Header */
 header {
-  display:flex;
-  justify-content:space-between;
-  align-items:start;
-  gap:20px;
-  padding:14px 0 30px;
+  padding:6px 0 26px;
+  text-align:center;
 }
 header p {
-  max-width:650px;
-  color:var(--muted);
-  margin-top:10px;
+  max-width:640px;
+  margin:12px auto 0;
+  color:#3a536c;
   font-size:17px;
 }
 .subtitle {
@@ -181,8 +179,8 @@ header p {
   box-shadow:var(--shadow);
 }
 header .subtitle {
+  margin:16px auto 0;
   color:var(--blue-deep);
-  margin-top:14px;
 }
 .subtitle::before {
   content:"";
@@ -200,6 +198,10 @@ header .subtitle {
   flex-wrap:wrap;
 }
 .switch {
+  position:absolute;
+  inset-block-start:26px;
+  inset-inline-end:clamp(18px,4vw,64px);
+  z-index:7;
   flex-wrap:nowrap;
   gap:2px;
   padding:4px;
@@ -225,17 +227,11 @@ header .subtitle {
 .row {
   justify-content:space-between;
 }
-.workspace {
-  display:grid;
-  grid-template-columns:minmax(0,1.75fr) minmax(310px,1fr);
-  gap:26px;
-  align-items:start;
-}
 
 /* Departure board metrics */
 .metrics {
   display:grid;
-  grid-template-columns:repeat(5,1fr);
+  grid-template-columns:repeat(4,1fr);
   gap:1px;
   margin-top:22px;
   overflow:hidden;
@@ -354,7 +350,7 @@ html[lang=ar] .metric span {
 }
 
 /* Boarding-pass cards */
-.card,.gap,.register-box {
+.card,.gap {
   background:var(--panel);
   border:1px solid var(--line);
   border-radius:18px;
@@ -403,7 +399,7 @@ html[lang=ar] .metric span {
   inset-block-end:-11px;
   width:20px;
   height:20px;
-  background:#eef7ff;
+  background:var(--notch);
   border:1px solid var(--line);
   border-radius:50%;
   z-index:1;
@@ -440,42 +436,9 @@ html[lang=ar] .metric span {
   margin-top:22px;
 }
 
-/* Domain filter chips, sticky while the list scrolls */
-.domain-filter {
-  position:sticky;
-  inset-block-start:0;
-  z-index:6;
-  display:grid;
-  gap:8px;
-  margin:0 -10px 6px;
-  padding:12px 10px 10px;
-  background:rgba(238,247,255,.84);
-  -webkit-backdrop-filter:blur(10px);
-  backdrop-filter:blur(10px);
-  border-radius:16px;
-}
-.filter-label {
-  font-weight:600;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  font-size:12px;
-}
-html[lang=ar] .filter-label {
-  letter-spacing:normal;
-  text-transform:none;
-  font-size:13px;
-}
-.chips {
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-}
-.chips button {
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-}
+/* Domain sections */
 .chip-count {
+  margin-inline-start:8px;
   min-width:22px;
   padding:1px 8px;
   font-size:12px;
@@ -485,9 +448,101 @@ html[lang=ar] .filter-label {
   background:var(--sky);
   border-radius:999px;
 }
-.chips button[aria-pressed=true] .chip-count {
+button[aria-pressed=true] .chip-count,button.primary .chip-count {
   color:#fff;
   background:rgba(255,255,255,.24);
+}
+
+/* Toolbar: filter dropdown on one side, actions on the other, pinned while the list scrolls */
+.section-title {
+  margin:30px 0 8px;
+  text-align:center;
+}
+.toolbar {
+  position:sticky;
+  inset-block-start:0;
+  z-index:6;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 -12px 6px;
+  padding:12px;
+  background:rgba(214,231,248,.86);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+  border-radius:16px;
+}
+.tools {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:12px;
+}
+.filter-menu {
+  position:relative;
+}
+.menu-toggle {
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  min-width:260px;
+  padding:9px 16px;
+  text-align:start;
+}
+.menu-label {
+  color:var(--muted);
+  font-weight:500;
+}
+.menu-value {
+  flex:1;
+  font-weight:700;
+}
+.chev {
+  width:12px;
+  height:12px;
+  transition:transform .2s;
+}
+.menu-toggle[aria-expanded=true] .chev {
+  transform:rotate(180deg);
+}
+.menu {
+  position:absolute;
+  inset-block-start:calc(100% + 8px);
+  inset-inline-start:0;
+  z-index:8;
+  display:grid;
+  gap:2px;
+  width:max(100%,340px);
+  max-height:340px;
+  overflow:auto;
+  padding:8px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:var(--shadow-lift);
+  animation:pop .2s cubic-bezier(.2,.8,.2,1) both;
+}
+.menu-row {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 10px;
+  font-weight:500;
+  border-radius:10px;
+  cursor:pointer;
+}
+.menu-row span:nth-of-type(1) {
+  flex:1;
+}
+.menu-row:hover,.menu-row:has(:focus-visible) {
+  background:var(--sky);
+}
+.menu-row:first-child {
+  margin-block-end:4px;
+  border-block-end:1px solid var(--line-soft);
+  border-radius:10px 10px 4px 4px;
 }
 
 /* Domain sections: a gate-sign banner above each group of boarding passes */
@@ -547,7 +602,7 @@ html[lang=ar] .filter-label {
 .domain-group.enter,.domain-head {
   animation:fade .45s ease both;
 }
-.gap>*+*,.register-body>*+* {
+.gap>*+* {
   margin-top:10px;
 }
 .question {
@@ -588,34 +643,15 @@ html[lang=ar] .filter-label {
   border:1px solid var(--line-soft);
 }
 
-/* Gap register styled as a delays board */
-#register {
-  position:sticky;
-  inset-block-start:16px;
-  max-height:calc(100vh - 32px);
-  overflow:auto;
-  border-radius:18px;
-}
-.register-box {
-  padding:0;
-  overflow:hidden;
-}
-.register-box>h2 {
-  padding:16px 20px;
-  color:#fff;
-  background:linear-gradient(180deg,#123a63,#0b2a4a);
-}
-.register-body {
-  padding:16px 18px 18px;
-}
-.register-body .gap {
+/* Gap cards, shown in the action plan dialog */
+.gap {
   background:#fff7f7;
   border-color:#f4cdd2;
   border-inline-start:4px solid var(--red);
   box-shadow:none;
   margin-bottom:10px;
 }
-.register-body .gap.enter {
+.gap.enter {
   animation:rise .5s cubic-bezier(.2,.7,.2,1) both;
 }
 .preserve {
@@ -817,30 +853,12 @@ bdi {
   overflow-wrap:anywhere;
 }
 
-@media(max-width:900px) {
-  .metrics {
-    grid-template-columns:repeat(6,1fr);
-  }
-  .metric {
-    grid-column:span 2;
-  }
-  .metric:nth-child(n+4) {
-    grid-column:span 3;
-  }
-}
 @media(max-width:780px) {
   main {
     padding-top:20px;
   }
-  .workspace {
-    grid-template-columns:1fr;
-  }
-  #register {
-    position:static;
-    max-height:none;
-  }
   header {
-    flex-wrap:wrap;
+    padding-top:0;
   }
   .flight {
     height:200px;
@@ -854,14 +872,16 @@ bdi {
   .count-badge {
     margin-inline-start:auto;
   }
-  .chips {
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    padding-bottom:4px;
-    scrollbar-width:thin;
+  .toolbar {
+    margin-inline:-8px;
+    padding:10px 8px;
   }
-  .chips button {
-    flex:none;
+  .filter-menu,.menu-toggle {
+    width:100%;
+  }
+  .tools {
+    width:100%;
+    justify-content:space-between;
   }
 }
 @media(max-width:480px) {
@@ -870,12 +890,6 @@ bdi {
   }
   .metrics {
     grid-template-columns:repeat(2,1fr);
-  }
-  .metric,.metric:nth-child(n+4) {
-    grid-column:auto;
-  }
-  .metric:last-child {
-    grid-column:1/-1;
   }
   .metric strong {
     font-size:26px;
@@ -894,5 +908,49 @@ bdi {
   }
   .cloud {
     transform:translateX(calc(var(--dir) * 20vw));
+  }
+}
+
+/* Globe emblem above the title: turning meridians and a plane in orbit */
+.emblem {
+  position:relative;
+  z-index:1;
+  display:block;
+  width:190px;
+  margin:10px auto -4px;
+  pointer-events:none;
+  filter:drop-shadow(0 14px 18px rgba(12,39,68,.25));
+}
+.emblem svg {
+  display:block;
+  width:100%;
+  height:auto;
+  overflow:visible;
+}
+.orbit-ring {
+  fill:none;
+  stroke:#fff;
+  stroke-opacity:.95;
+  stroke-width:1.6;
+  stroke-dasharray:2 7;
+  stroke-linecap:round;
+}
+.m {
+  transform-box:fill-box;
+  transform-origin:center;
+  transform:scaleX(var(--s,1));
+  animation:turn 16s linear infinite;
+}
+.m1 { --s:.2; animation-delay:0s; }
+.m2 { --s:.5; animation-delay:-4s; }
+.m3 { --s:.8; animation-delay:-8s; }
+.m4 { --s:1; animation-delay:-12s; }
+@keyframes turn {
+  0%,100% { transform:scaleX(1); }
+  50% { transform:scaleX(-1); }
+}
+@media(max-width:600px) {
+  .emblem {
+    width:140px;
   }
 }

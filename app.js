@@ -32,7 +32,8 @@ const strings = {
   storageError:['Browser storage is unavailable. Changes will only last while this page is open.','تخزين المتصفح غير متاح. تستمر التغييرات ما دامت هذه الصفحة مفتوحة.'],
   allDomains:['All domains','كل المجالات'], filterBy:['Filter by domain','التصفية حسب المجال'],
   domainField:['Domain','المجال'], other:['Other','أخرى'],
-  noMatch:['No items in the selected domains match the current view.','لا توجد بنود مطابقة في المجالات المحددة.']
+  noMatch:['No items in the selected domains match the current view.','لا توجد بنود مطابقة في المجالات المحددة.'],
+  plan:['Action plan','خطة العمل']
 };
 const storageKey = 'egyptair-audit-v2';
 const modal = document.querySelector('#modal');
@@ -49,6 +50,8 @@ let flipId = null;
 let domains = [];
 // Filtering replays only the card entrance, not the counters or the runway.
 let animateCards = false;
+// The domain menu stays open across rerenders so several domains can be ticked in a row.
+let filterOpen = false;
 // Rerendering replaces every button, so remember which control to refocus afterward.
 let refocus = '';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -119,6 +122,17 @@ function card(item, index = 0) {
   </article>`;
 }
 
+// Numeric deadlines and risk enums make sorting independent of display language.
+const gapList = items => items.filter(item => item.outcome === 'gap').sort((a,b) =>
+  rank[b.risk] - rank[a.risk] || a.days - b.days || a.id.localeCompare(b.id, 'en'));
+
+// The action plan lists every gap, highest risk first, so it can be handed to the client.
+function showPlan() {
+  const gaps = gapList(state.items);
+  dialog(t('plan'), `<div class="dialog-content"><p class="muted">${t('order')}</p>
+    ${gaps.map(gapCard).join('') || `<p class="muted">${t('noGaps')}</p>`}</div>`);
+}
+
 function gapCard(item) {
   return `<article class="gap ${animateEntrance ? 'enter' : ''}"><div class="row"><small><bdi>${escape(item.id)}</bdi></small>${status(item)}</div>
     <h3>${localized(item.title)}</h3><div class="meta">${badge('risk',t(item.risk))}${badge('urgency',deadline(item.days))}</div>
@@ -137,11 +151,34 @@ function countText(n) {
   return `${n} ${n <= 10 ? 'بنود' : 'بندًا'}`;
 }
 
-function domainFilter(groups) {
-  const chips = groups.map(({domain, all}) => `<button type="button" data-action="domain" data-id="${escape(domain.key)}"
-    aria-pressed="${state.selected.includes(domain.key)}">${localized(domain.name)}<span class="chip-count">${all.length}</span></button>`).join('');
-  return `<div class="domain-filter" role="group" aria-label="${t('filterBy')}"><small class="filter-label">${t('filterBy')}</small>
-    <div class="chips"><button type="button" data-action="domain-all" aria-pressed="${!state.selected.length}">${t('allDomains')}<span class="chip-count">${state.items.length}</span></button>${chips}</div></div>`;
+function domainsCount(n) {
+  if (state.lang !== 'ar') return `${n} domains`;
+  return n === 2 ? 'مجالان' : `${n} ${n <= 10 ? 'مجالات' : 'مجالًا'}`;
+}
+function domainSummary(groups) {
+  const picked = groups.filter(({domain}) => state.selected.includes(domain.key));
+  if (!picked.length) return t('allDomains');
+  return picked.length === 1 ? localized(picked[0].domain.name) : domainsCount(picked.length);
+}
+
+// A multi-select dropdown scales to any number of domains without taking up page space.
+function filterMenu(groups) {
+  const rows = groups.map(({domain, all}) => `<label class="menu-row"><input type="checkbox" data-domain="${escape(domain.key)}"
+    ${state.selected.includes(domain.key) ? 'checked' : ''}><span>${localized(domain.name)}</span><span class="chip-count">${all.length}</span></label>`).join('');
+  return `<div class="filter-menu"><button type="button" class="menu-toggle" data-action="menu" aria-haspopup="true"
+    aria-expanded="${filterOpen}" aria-controls="domain-menu"><span class="menu-label">${t('filterBy')}</span>
+    <span class="menu-value">${domainSummary(groups)}</span>
+    <svg class="chev" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="menu" id="domain-menu" role="group" aria-label="${t('filterBy')}" ${filterOpen ? '' : 'hidden'}>
+      <label class="menu-row"><input type="checkbox" data-domain-all ${state.selected.length ? '' : 'checked'}><span>${t('allDomains')}</span>
+        <span class="chip-count">${state.items.length}</span></label>${rows}</div></div>`;
+}
+function setMenu(open) {
+  filterOpen = open;
+  const menu = document.querySelector('#domain-menu'), toggle = document.querySelector('.menu-toggle');
+  if (!menu || !toggle) return;
+  menu.hidden = !open;
+  toggle.setAttribute('aria-expanded', String(open));
 }
 
 function domainGroup({domain, shown}, order) {
@@ -172,9 +209,8 @@ function render() {
   const items = state.items;
   const reviewed = items.filter(item => item.reviewed).length;
   // Numeric deadlines and risk enums make sorting independent of display language.
-  const gaps = items.filter(item => item.outcome === 'gap').sort((a,b) =>
-    rank[b.risk] - rank[a.risk] || a.days - b.days || a.id.localeCompare(b.id, 'en'));
-  const metrics = [['total',items.length],['reviewed',reviewed],['pass',items.filter(i=>i.outcome==='pass').length],
+  const gaps = gapList(items);
+  const metrics = [['total',items.length],['pass',items.filter(i=>i.outcome==='pass').length],
     ['gap',gaps.length],['uncertain',items.filter(i=>i.outcome==='uncertain').length]];
   document.querySelector('#summary').innerHTML = `<div class="metrics">
     ${metrics.map(([key,count])=>`<div class="metric ${outcomeClass(key)}"><span>${t(key)}</span><strong data-count="${count}">${count}</strong></div>`).join('')}
@@ -193,13 +229,12 @@ function render() {
   state.selected = state.selected.filter(key => groups.some(group => group.domain.key === key));
   const chosen = groups.filter(group => (!state.selected.length || state.selected.includes(group.domain.key)) && group.shown.length);
   const order = {next:0};
-  document.querySelector('#checklist').innerHTML = `<div class="bar"><h2>${t('checklist')}</h2><div class="row">
-    <label class="inline"><input type="checkbox" id="hide" ${state.hide?'checked':''}>${t('hide')}</label>
-    ${button('add','add','','primary')}</div></div>
-    ${domainFilter(groups)}
+  document.querySelector('#checklist').innerHTML = `<h2 class="section-title">${t('checklist')}</h2>
+    <div class="toolbar">${filterMenu(groups)}<div class="tools">
+      <label class="inline"><input type="checkbox" id="hide" ${state.hide?'checked':''}>${t('hide')}</label>
+      <button type="button" data-action="plan">${t('plan')}<span class="chip-count">${gaps.length}</span></button>
+      ${button('add','add','','primary')}</div></div>
     ${chosen.map(group => domainGroup(group, order)).join('') || `<p class="card muted">${t(items.length ? 'noMatch' : 'empty')}</p>`}`;
-  document.querySelector('#register').innerHTML = `<div class="register-box"><h2>${t('register')}</h2>
-    <div class="register-body"><p class="muted">${t('order')}</p>${gaps.map(gapCard).join('') || `<p class="muted">${t('noGaps')}</p>`}</div></div>`;
   if (animateEntrance && !reducedMotion.matches) flipCounters();
   animateEntrance = false;
   animateCards = false;
@@ -226,10 +261,11 @@ function flipCounters() {
 
 // SMIL motion ignores CSS, so pause the flight path when the visitor asks for reduced motion.
 function syncFlight() {
-  const svg = document.querySelector('.flight svg');
-  if (!svg?.pauseAnimations) return;
-  if (reducedMotion.matches) { svg.pauseAnimations(); svg.setCurrentTime(6); }
-  else svg.unpauseAnimations();
+  for (const svg of document.querySelectorAll('.flight svg, .emblem svg')) {
+    if (!svg.pauseAnimations) continue;
+    if (reducedMotion.matches) { svg.pauseAnimations(); svg.setCurrentTime(6); }
+    else svg.unpauseAnimations();
+  }
 }
 reducedMotion.addEventListener?.('change', syncFlight);
 syncFlight();
@@ -237,7 +273,8 @@ syncFlight();
 // Native dialog supplies modal focus handling and Escape-to-close.
 function dialog(title, content) {
   modal.innerHTML = `<div class="row"><h2 id="dialog-title">${title}</h2>${button('close','close')}</div>${content}`;
-  modal.showModal();
+  // Opening a form from inside the action plan reuses the dialog that is already open.
+  if (!modal.open) modal.showModal();
 }
 function formButtons() {
   return `<div class="card-actions"><button class="primary" type="submit">${t('save')}</button>${button('close','cancel')}</div>`;
@@ -360,18 +397,15 @@ function showSource(item) {
 
 // Delegate actions because cards are replaced after every saved state change.
 document.addEventListener('click', event => {
+  if (filterOpen && !event.target.closest('.filter-menu')) setMenu(false);
   const control = event.target.closest('button[data-action]');
   if (!control || !state) return;
   const {action,id} = control.dataset;
   const item = state.items.find(candidate=>candidate.id===id);
   switch (action) {
     case 'lang': if (state.lang !== id) animateEntrance = true; state.lang = id; save(); break;
-    case 'domain':
-      // Chips toggle independently so several domains can be shown together.
-      state.selected = state.selected.includes(id) ? state.selected.filter(key => key !== id) : [...state.selected, id];
-      animateCards = true; refocus = `button[data-action="domain"][data-id="${id}"]`; save(); break;
-    case 'domain-all':
-      state.selected = []; animateCards = true; refocus = 'button[data-action="domain-all"]'; save(); break;
+    case 'menu': setMenu(!filterOpen); break;
+    case 'plan': showPlan(); break;
     case 'close': modal.close(); break;
     case 'add': editItem(); break;
     case 'edit': editItem(item); break;
@@ -389,9 +423,26 @@ document.addEventListener('click', event => {
   }
 });
 document.addEventListener('change',event=>{
-  if (event.target.id === 'hide') {
-    state.hide = event.target.checked;
+  const box = event.target;
+  if (!state) return;
+  if (box.id === 'hide') {
+    state.hide = box.checked;
     save();
+  } else if (box.dataset.domain) {
+    // Domains toggle independently, so any combination can be shown together.
+    const key = box.dataset.domain;
+    state.selected = box.checked ? [...new Set([...state.selected, key])] : state.selected.filter(selected => selected !== key);
+    animateCards = true; refocus = `input[data-domain="${key}"]`; save();
+  } else if ('domainAll' in box.dataset) {
+    state.selected = [];
+    animateCards = true; refocus = 'input[data-domain-all]'; save();
   }
+});
+// Close the menu from the keyboard, or when focus moves to another control.
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && filterOpen) { setMenu(false); document.querySelector('.menu-toggle')?.focus(); }
+});
+document.addEventListener('focusout', event => {
+  if (filterOpen && event.relatedTarget && !event.relatedTarget.closest?.('.filter-menu')) setMenu(false);
 });
 start();

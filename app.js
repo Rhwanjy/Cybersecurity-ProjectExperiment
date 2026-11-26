@@ -5,7 +5,7 @@ const strings = {
   company:['EgyptAir','مصر للطيران'], subtitle:['Cybersecurity Audit Checklist','قائمة تدقيق الأمن السيبراني'],
   intro:['A simulated cybersecurity assessment of EgyptAir, Egypt’s national airline.','تقييم محاكاة للأمن السيبراني لشركة مصر للطيران، الناقل الوطني المصري.'],
   total:['Total items','إجمالي البنود'], pass:['Control in place','الضابط مطبّق'],
-  gap:['Gap found','فجوة قائمة'], uncertain:['Needs evidence','يحتاج دليلًا'], open:['Open','مفتوح'], progress:['In progress','قيد التنفيذ'], closed:['Closed','مغلق'],
+  gap:['Gap found','فجوة قائمة'], uncertain:['Needs evidence','يحتاج دليلًا'], open:['Open','مفتوح'], progress:['In progress','قيد التنفيذ'], closed:['Closed','مغلق'], audited:['Audited','تم تدقيقه'],
   viewSource:['View source','عرض المصدر'],
   checklist:['Checklist','قائمة التدقيق'], register:['Gap Register','سجل الفجوات'],
   order:['Highest risk first, then shortest deadline.','الأعلى خطورة أولًا، ثم الأقرب موعدًا.'],
@@ -140,12 +140,11 @@ function stub(item) {
   const ref = item.standard || {};
   const [name, ...rest] = String(localized(ref.name || {})).split(' — ');
   const clause = /^(.*?)\s*\((.*)\)\s*$/.exec(String(ref.clause || ''));
-  const number = escape(clause ? clause[1] : ref.clause), tag = clause ? escape(clause[2]) : '';
+  const number = escape(clause ? clause[1] : ref.clause);
   return `<button type="button" class="stub" data-action="source" data-id="${escape(item.id)}">
     <span class="stub-label">${t('standard')}</span>
     <span class="stub-name">${name}</span>${rest.length ? `<span class="stub-sub">${rest.join(' — ')}</span>` : ''}
-    <span class="stub-clause"><bdi>${number}</bdi></span>${tag ? `<span class="stub-tag"><bdi>${tag}</bdi></span>` : ''}
-    <span class="stub-type ${escape(ref.type)}">${t(ref.type) }</span>
+    <span class="stub-clause"><bdi>${number}</bdi></span>
     <span class="stub-go">${t('viewSource')}<svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 6h8M6.5 2.5 10 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     <span class="barcode" aria-hidden="true"></span></button>`;
 }
@@ -227,8 +226,8 @@ function countText(n) {
 
 // Each auditor is drawn from a few traits so the desk character always matches the person selected.
 const looks = {
-  youssef:{skin:'#ebc6a2', hair:'#2a1d16', shirt:'#2f6fd0', glasses:'square'},
-  fareed:{skin:'#c28a5c', hair:'#1f1712', shirt:'#2a9d8f', glasses:'round'},
+  youssef:{skin:'#ebc6a2', hair:'#2a1d16', shirt:'#2f6fd0', glasses:'round'},
+  fareed:{skin:'#c28a5c', hair:'#1f1712', shirt:'#2a9d8f', glasses:'square'},
   zaina:{skin:'#f2d0ae', hair:'#3a2418', shirt:'#e07a5f'},
   jana:{skin:'#d9a577', hair:'#2a1d16', shirt:'#6c5aa8', scarf:'#d4789a'}
 };
@@ -333,16 +332,17 @@ function render() {
   const items = state.auditor ? state.items.filter(item => item.auditor === state.auditor) : state.items;
   const counts = {};
   for (const item of state.items) counts[item.auditor] = (counts[item.auditor] || 0) + 1;
-  const closed = items.filter(item => statusOf(item) === 'closed').length;
+  // The runway fills for any recorded result, since each one means the item has been audited.
+  const audited = items.filter(item => item.outcome).length;
   // Numeric deadlines and risk enums make sorting independent of display language.
   const gaps = gapList(items), teamGaps = gapList(state.items);
   const metrics = [['total',items.length],['pass',items.filter(i=>i.outcome==='pass').length],
     ['gap',gaps.length],['uncertain',items.filter(i=>i.outcome==='uncertain').length]];
   document.querySelector('#summary').innerHTML = `${deskScene(counts)}<div class="metrics">
     ${metrics.map(([key,count])=>`<div class="metric ${outcomeClass(key)}"><span>${t(key)}</span><strong data-count="${count}">${count}</strong></div>`).join('')}
-    </div><div class="progress"><span>${t('closed')} <bdi>${closed} / ${items.length}</bdi></span>
-    <div class="runway" role="progressbar" aria-label="${t('closed')}" aria-valuemin="0" aria-valuemax="${items.length}" aria-valuenow="${closed}"
-      style="--p:${items.length ? Math.round(closed / items.length * 100) : 0}%">
+    </div><div class="progress"><span>${t('audited')} <bdi>${audited} / ${items.length}</bdi></span>
+    <div class="runway" role="progressbar" aria-label="${t('audited')}" aria-valuemin="0" aria-valuemax="${items.length}" aria-valuenow="${audited}"
+      style="--p:${items.length ? Math.round(audited / items.length * 100) : 0}%">
       <div class="runway-track"><div class="runway-fill ${animateEntrance ? 'grow' : ''}"></div></div>
       <span class="runway-plane ${animateEntrance ? 'grow' : ''}">${planeIcon}</span></div></div>`;
   // Group items by domain in the order domains.json lists them. Empty domains get no chip or section.

@@ -1,0 +1,35 @@
+[
+  {
+    "key": "youssef",
+    "name": {
+      "en": "Youssef",
+      "ar": "يوسف"
+    },
+    "gender": "male"
+  },
+  {
+    "key": "fareed",
+    "name": {
+      "en": "Fareed",
+      "ar": "فريد"
+    },
+    "gender": "male"
+  },
+  {
+    "key": "zaina",
+    "name": {
+      "en": "Zaina",
+      "ar": "زينة"
+    },
+    "gender": "female"
+  },
+  {
+    "key": "jana",
+    "name": {
+      "en": "Jana",
+      "ar": "جنى"
+    },
+    "gender": "female",
+    "hijab": true
+  }
+]

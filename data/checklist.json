@@ -37,7 +37,8 @@
       "type": "paraphrase",
       "url": "",
       "publicationUrl": ""
-    }
+    },
+    "auditor": "zaina"
   },
   {
     "id": "AV-002",
@@ -77,7 +78,8 @@
       "type": "paraphrase",
       "url": "",
       "publicationUrl": ""
-    }
+    },
+    "auditor": "zaina"
   },
   {
     "id": "AV-003",
@@ -117,7 +119,8 @@
       "type": "paraphrase",
       "url": "",
       "publicationUrl": ""
-    }
+    },
+    "auditor": "zaina"
   },
   {
     "id": "AV-004",
@@ -157,7 +160,8 @@
       "type": "paraphrase",
       "url": "",
       "publicationUrl": ""
-    }
+    },
+    "auditor": "zaina"
   },
   {
     "id": "AV-005",
@@ -197,7 +201,8 @@
       "type": "paraphrase",
       "url": "",
       "publicationUrl": ""
-    }
+    },
+    "auditor": "zaina"
   },
   {
     "id": "AV-006",
@@ -237,7 +242,8 @@
       "type": "paraphrase",
       "url": "",
       "publicationUrl": ""
-    }
+    },
+    "auditor": "zaina"
   },
   {
     "id": "AV-007",
@@ -277,7 +283,8 @@
       "type": "paraphrase",
       "url": "",
       "publicationUrl": ""
-    }
+    },
+    "auditor": "zaina"
   },
   {
     "id": "AV-008",
@@ -317,6 +324,7 @@
       "type": "paraphrase",
       "url": "",
       "publicationUrl": ""
-    }
+    },
+    "auditor": "zaina"
   }
 ]

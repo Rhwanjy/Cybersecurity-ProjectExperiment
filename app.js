@@ -29,6 +29,8 @@ const strings = {
   loadError:['Could not load the checklist. Refresh to try again.','تعذّر تحميل القائمة. أعد تحميل الصفحة للمحاولة مرة أخرى.'],
   storageError:['Browser storage is unavailable. Changes will only last while this page is open.','تخزين المتصفح غير متاح. تستمر التغييرات ما دامت هذه الصفحة مفتوحة.'],
   allDomains:['All domains','كل المجالات'], filterBy:['Filter by domain','التصفية حسب المجال'],
+  askAuditor:['Who would you like to assist you today?','مَن تودّ أن يساعدك اليوم؟'], everyone:['Whole team','الفريق كله'],
+  auditorTag:['Auditor','المدقق'], noAuditorItems:['No items are assigned to this auditor yet.','لا توجد بنود مُسندة لهذا المدقق بعد.'],
   other:['Other','أخرى'],
   noMatch:['No items in the selected domains match the current view.','لا توجد بنود مطابقة في المجالات المحددة.'],
   plan:['Action plan','خطة العمل']
@@ -46,6 +48,7 @@ let animateEntrance = true;
 let flipId = null;
 // Domain definitions load from data/domains.json on every visit; items reference them by key.
 let domains = [];
+let auditors = [];
 // Filtering replays only the card entrance, not the counters or the runway.
 let animateCards = false;
 // The domain menu stays open across rerenders so several domains can be ticked in a row.
@@ -79,15 +82,17 @@ async function start() {
   try {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch { storageFailed = true; }
-    const [domainResponse, itemResponse] = await Promise.all([fetch('./data/domains.json'), fetch('./data/checklist.json')]);
-    if (!domainResponse.ok || !itemResponse.ok) throw new Error('Checklist fetch failed');
+    const [domainResponse, itemResponse, auditorResponse] = await Promise.all([fetch('./data/domains.json'), fetch('./data/checklist.json'), fetch('./data/auditors.json')]);
+    if (!domainResponse.ok || !itemResponse.ok || !auditorResponse.ok) throw new Error('Checklist fetch failed');
     domains = await domainResponse.json();
+    auditors = await auditorResponse.json();
     baseItems = await itemResponse.json();
     // Earlier versions saved whole items; keep their progress and drop the copied content.
     const progress = saved?.progress ?? Object.fromEntries((saved?.items ?? []).map(item =>
       [item.id, pickProgress(item, baseItems.find(base => base.id === item.id))]));
     state = {lang: saved?.lang === 'ar' ? 'ar' : 'en', hide: !!saved?.hide,
       selected: Array.isArray(saved?.selected) ? saved.selected : [],
+      auditor: auditors.some(person => person.key === saved?.auditor) ? saved.auditor : '',
       items: baseItems.map(base => ({...base, ...progress[base.id]}))};
     render();
   } catch {
@@ -98,9 +103,9 @@ async function start() {
 
 // A single save operation keeps checklist, summary, and register in sync.
 function save() {
-  const {lang, hide, selected} = state;
+  const {lang, hide, selected, auditor} = state;
   const progress = Object.fromEntries(state.items.map(item => [item.id, pickProgress(item, baseItems.find(base => base.id === item.id))]));
-  try { localStorage.setItem(storageKey, JSON.stringify({lang, hide, selected, progress})); }
+  try { localStorage.setItem(storageKey, JSON.stringify({lang, hide, selected, auditor, progress})); }
   catch { storageFailed = true; }
   render();
 }
@@ -114,6 +119,10 @@ const label = (key, value) => `<section><small>${t(key)}</small><p class="preser
 const outcomeClass = outcome => outcome ? `${outcome}-tone` : '';
 const statusOf = item => item.outcome === 'pass' ? 'closed' : item.outcome ? 'progress' : 'open';
 const status = item => `<span class="pill st-${statusOf(item)} ${item.id === flipId ? 'flip' : ''}"><i></i>${t(statusOf(item))}</span>`;
+const auditorPill = item => {
+  const who = auditors.find(person => person.key === item.auditor);
+  return who ? `<span class="pill who">${t('auditorTag')} · ${localized(who.name)}</span>` : '';
+};
 const outcomePill = item => item.outcome ? `<span class="pill ${item.outcome}-tone"><i></i>${t(item.outcome)}</span>` : '';
 // Colors follow heat: red is hottest, then orange, then calmer blues and grays.
 const urgencyLevel = days => days === 0 ? 'now' : days <= 14 ? 'soon' : days <= 90 ? 'mid' : 'later';
@@ -144,7 +153,7 @@ function card(item, index = 0) {
     <div class="row pass-head"><small class="pass-id">${planeIcon}<bdi>${escape(item.id)}</bdi></small>${status(item)}</div>
     <h4>${localized(item.title)}</h4>
     <p class="question">${localized(item.question)}</p>
-    <div class="meta">${riskBadge(item)}${urgencyBadge(item)}${outcomePill(item)}</div>
+    <div class="meta">${riskBadge(item)}${urgencyBadge(item)}${outcomePill(item)}${state.auditor ? '' : auditorPill(item)}</div>
     <details data-record="${escape(item.id)}" ${openedDetails.has(item.id) ? 'open' : ''}><summary>${t('details')}</summary>
       ${label('example',localized(item.example))}${label('actions',localized(item.actions))}${label('why',localized(item.why))}
     </details>
@@ -197,6 +206,52 @@ function countText(n) {
   return `${n} ${n <= 10 ? 'بنود' : 'بندًا'}`;
 }
 
+// Each auditor is drawn from a few traits so the desk character always matches the person selected.
+const looks = {
+  youssef:{skin:'#d6a173', hair:'#2a1d16', shirt:'#2f6fd0'},
+  fareed:{skin:'#c28a5c', hair:'#1f1712', shirt:'#2a9d8f', glasses:true},
+  zaina:{skin:'#e0b48a', hair:'#3a2418', shirt:'#e07a5f'},
+  jana:{skin:'#d9a577', hair:'#2a1d16', shirt:'#6c5aa8', scarf:'#d4789a'}
+};
+function person(auditor, pop) {
+  const look = looks[auditor.key] || looks.youssef;
+  const female = auditor.gender === 'female', hijab = auditor.hijab;
+  const face = `<ellipse cx="70" cy="62" rx="${hijab ? 18 : 24}" ry="${hijab ? 22 : 28}" fill="${look.skin}"/>`;
+  const hair = hijab ? '' : female
+    ? `<path d="M43 64C37 22 103 22 97 64L102 112C88 106 52 106 38 112Z" fill="${look.hair}"/>`
+    : '';
+  const fringe = hijab ? '' : female
+    ? `<path d="M45 56C49 33 91 33 95 56C84 45 58 43 45 56Z" fill="${look.hair}"/>`
+    : `<path d="M45 58C42 28 98 28 95 58C90 44 50 44 45 58Z" fill="${look.hair}"/>`;
+  const scarf = hijab ? `<path d="M70 26C42 26 38 52 41 72C41 90 34 102 20 118C50 130 90 130 120 118C106 102 99 90 99 72C102 52 98 26 70 26Z" fill="${look.scarf}"/>` : '';
+  const neck = hijab ? '' : `<rect x="60" y="88" width="20" height="20" rx="8" fill="${look.skin}"/>`;
+  const glasses = look.glasses ? `<g fill="none" stroke="#1f2937" stroke-width="2"><circle cx="61" cy="63" r="8"/><circle cx="79" cy="63" r="8"/><path d="M69 63h2"/></g>` : '';
+  return `<div class="person ${pop ? 'pop' : ''}"><svg viewBox="0 0 140 170" focusable="false">
+    ${hijab ? '' : hair}
+    <path d="M12 170C12 124 38 102 70 102C102 102 128 124 128 170Z" fill="${look.shirt}"/>
+    ${scarf}${neck}
+    ${hijab ? '' : `<path d="M57 102 70 118 83 102" fill="#fff"/>`}
+    ${face}${fringe}
+    <g class="eyes" fill="#1b2a3a"><circle cx="62" cy="64" r="2.6"/><circle cx="78" cy="64" r="2.6"/></g>${glasses}
+    <path d="M62 76Q70 83 78 76" fill="none" stroke="#7a3b2e" stroke-width="2.2" stroke-linecap="round"/>
+    <g class="tag"><rect x="70" y="124" width="56" height="26" rx="5" fill="#fff" stroke="#c9d9ea"/><rect x="70" y="124" width="56" height="7" rx="3.5" fill="#c8283d"/>
+      <text x="98" y="145" text-anchor="middle" font-size="12" font-weight="800" fill="#0b2a4a">${localized(auditor.name)}</text></g>
+  </svg></div>`;
+}
+
+// The picker doubles as a filter: the chosen auditor sits behind the statistics bar as if it were their desk.
+function deskScene(counts) {
+  const chosen = auditors.find(person => person.key === state.auditor);
+  const pop = animateCards || animateEntrance;
+  const chips = [['', t('everyone'), state.items.length], ...auditors.map(person => [person.key, localized(person.name), counts[person.key] || 0])]
+    .map(([key, name, count]) => `<button type="button" data-action="auditor" data-id="${key}" aria-pressed="${state.auditor === key}">${name}<span class="chip-count">${count}</span></button>`).join('');
+  const bubble = chosen ? (state.lang === 'ar'
+    ? `أهلًا، أنا ${localized(chosen.name)} — ${countText(counts[chosen.key] || 0)} على مكتبي.`
+    : `Hi, I’m ${localized(chosen.name)} — ${countText(counts[chosen.key] || 0)} on my desk.`) : '';
+  return `<div class="desk-pick"><h2>${t('askAuditor')}</h2><div class="auditor-chips" role="group" aria-label="${t('askAuditor')}">${chips}</div></div>
+    <div class="stage ${chosen ? 'solo' : ''}" aria-hidden="true">${chosen ? person(chosen, pop) + `<p class="bubble">${bubble}</p>` : auditors.map(person_ => person(person_, pop)).join('')}</div>`;
+}
+
 function domainsCount(n) {
   if (state.lang !== 'ar') return `${n} domains`;
   return n === 2 ? 'مجالان' : `${n} ${n <= 10 ? 'مجالات' : 'مجالًا'}`;
@@ -208,7 +263,7 @@ function domainSummary(groups) {
 }
 
 // A multi-select dropdown scales to any number of domains without taking up page space.
-function filterMenu(groups) {
+function filterMenu(groups, total) {
   const rows = groups.map(({domain, all}) => `<label class="menu-row"><input type="checkbox" data-domain="${escape(domain.key)}"
     ${state.selected.includes(domain.key) ? 'checked' : ''}><span class="menu-icon" aria-hidden="true">${domainIcon(domain.key)}</span><span class="menu-text">${localized(domain.name)}</span><span class="chip-count">${all.length}</span></label>`).join('');
   return `<div class="filter-menu"><button type="button" class="menu-toggle" data-action="menu" aria-haspopup="true"
@@ -217,7 +272,7 @@ function filterMenu(groups) {
     <svg class="chev" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <div class="menu" id="domain-menu" role="group" aria-label="${t('filterBy')}" ${filterOpen ? '' : 'hidden'}>
       <label class="menu-row"><input type="checkbox" data-domain-all ${state.selected.length ? '' : 'checked'}><span class="menu-text">${t('allDomains')}</span>
-        <span class="chip-count">${state.items.length}</span></label>${rows}</div></div>`;
+        <span class="chip-count">${total}</span></label>${rows}</div></div>`;
 }
 function setMenu(open) {
   filterOpen = open;
@@ -251,13 +306,16 @@ function render() {
     <p>${t('intro')}</p></div><div class="switch" dir="ltr">
     <button lang="en" data-action="lang" data-id="en" aria-pressed="${state.lang==='en'}">English</button>
     <button lang="ar" data-action="lang" data-id="ar" aria-pressed="${state.lang==='ar'}">العربية</button></div>`;
-  const items = state.items;
+  // Statistics, sections and the domain menu follow the chosen auditor; the action plan always covers the whole team.
+  const items = state.auditor ? state.items.filter(item => item.auditor === state.auditor) : state.items;
+  const counts = {};
+  for (const item of state.items) counts[item.auditor] = (counts[item.auditor] || 0) + 1;
   const closed = items.filter(item => statusOf(item) === 'closed').length;
   // Numeric deadlines and risk enums make sorting independent of display language.
-  const gaps = gapList(items);
+  const gaps = gapList(items), teamGaps = gapList(state.items);
   const metrics = [['total',items.length],['pass',items.filter(i=>i.outcome==='pass').length],
     ['gap',gaps.length],['uncertain',items.filter(i=>i.outcome==='uncertain').length]];
-  document.querySelector('#summary').innerHTML = `<div class="metrics">
+  document.querySelector('#summary').innerHTML = `${deskScene(counts)}<div class="metrics">
     ${metrics.map(([key,count])=>`<div class="metric ${outcomeClass(key)}"><span>${t(key)}</span><strong data-count="${count}">${count}</strong></div>`).join('')}
     </div><div class="progress"><span>${t('closed')} <bdi>${closed} / ${items.length}</bdi></span>
     <div class="runway" role="progressbar" aria-label="${t('closed')}" aria-valuemin="0" aria-valuemax="${items.length}" aria-valuenow="${closed}"
@@ -275,11 +333,11 @@ function render() {
   const chosen = groups.filter(group => (!state.selected.length || state.selected.includes(group.domain.key)) && group.shown.length);
   const order = {next:0};
   document.querySelector('#checklist').innerHTML = `<h2 class="section-title">${t('checklist')}</h2>
-    <div class="toolbar">${filterMenu(groups)}<div class="tools">
+    <div class="toolbar">${filterMenu(groups, items.length)}<div class="tools">
       <label class="inline"><input type="checkbox" id="hide" ${state.hide?'checked':''}>${t('hide')}</label>
-      <button type="button" data-action="plan">${t('plan')}<span class="chip-count">${gaps.length}</span></button>
+      <button type="button" data-action="plan">${t('plan')}<span class="chip-count">${teamGaps.length}</span></button>
 </div></div>
-    ${chosen.map(group => domainGroup(group, order)).join('') || `<p class="card muted">${t(items.length ? 'noMatch' : 'empty')}</p>`}`;
+    ${chosen.map(group => domainGroup(group, order)).join('') || `<p class="card muted">${t(items.length ? 'noMatch' : state.auditor ? 'noAuditorItems' : 'empty')}</p>`}`;
   if (animateEntrance && !reducedMotion.matches) flipCounters();
   animateEntrance = false;
   animateCards = false;
@@ -399,6 +457,7 @@ document.addEventListener('click', event => {
   switch (action) {
     case 'lang': if (state.lang !== id) animateEntrance = true; state.lang = id; save(); break;
     case 'menu': setMenu(!filterOpen); break;
+    case 'auditor': state.auditor = id; animateCards = true; refocus = `button[data-action="auditor"][data-id="${id}"]`; save(); break;
     case 'plan': showPlan(); break;
     case 'close': modal.close(); break;
     case 'source': showSource(item); break;

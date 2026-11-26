@@ -1355,3 +1355,56 @@ button.stub:hover {
     font-size:19px;
   }
 }
+
+/* Audit result: three choices live on the ticket */
+.result {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+}
+.result-label {
+  margin-inline-end:4px;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+html[lang=ar] .result-label {
+  letter-spacing:normal;
+  text-transform:none;
+  font-size:14px;
+}
+.res {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 14px;
+}
+.res svg {
+  width:16px;
+  height:16px;
+}
+.res-pass { color:var(--green); border-color:#b4e6cf; }
+.res-gap { color:var(--red); border-color:#f5c2c8; }
+.res-uncertain { color:var(--amber); border-color:#f2d28a; }
+.res-pass:hover { background:var(--green-bg); }
+.res-gap:hover { background:var(--red-bg); }
+.res-uncertain:hover { background:var(--amber-bg); }
+button.res.res-pass[aria-pressed=true] { color:#fff; background:linear-gradient(135deg,#1f9d6b,#12794f); box-shadow:0 6px 14px -6px rgba(18,121,79,.7); }
+button.res.res-gap[aria-pressed=true] { color:#fff; background:linear-gradient(135deg,#d93a50,#b0243a); box-shadow:0 6px 14px -6px rgba(176,36,58,.7); }
+button.res.res-uncertain[aria-pressed=true] { color:#fff; background:linear-gradient(135deg,#e0961a,#b87108); box-shadow:0 6px 14px -6px rgba(184,113,8,.7); }
+.gap-fields {
+  display:grid;
+  gap:10px;
+  padding:12px 14px;
+  background:var(--red-bg);
+  border:1px solid #f5c2c8;
+  border-radius:14px;
+  animation:fade .3s ease both;
+}
+.gap-fields textarea {
+  min-height:58px;
+  resize:vertical;
+}

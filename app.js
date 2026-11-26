@@ -5,7 +5,7 @@ const strings = {
   company:['EgyptAir','مصر للطيران'], subtitle:['Cybersecurity Audit Checklist','قائمة تدقيق الأمن السيبراني'],
   intro:['A simulated cybersecurity assessment of EgyptAir, Egypt’s national airline.','تقييم محاكاة للأمن السيبراني لشركة مصر للطيران، الناقل الوطني المصري.'],
   total:['Total items','إجمالي البنود'], pass:['Control in place','الضابط مطبّق'],
-  gap:['Gap found','فجوة قائمة'], uncertain:['Unconfirmed','غير مؤكد'], open:['Open','مفتوح'], progress:['In progress','قيد التنفيذ'], closed:['Closed','مغلق'],
+  gap:['Gap found','فجوة قائمة'], uncertain:['Needs evidence','يحتاج دليلًا'], open:['Open','مفتوح'], progress:['In progress','قيد التنفيذ'], closed:['Closed','مغلق'],
   viewSource:['View source','عرض المصدر'],
   checklist:['Checklist','قائمة التدقيق'], register:['Gap Register','سجل الفجوات'],
   order:['Highest risk first, then shortest deadline.','الأعلى خطورة أولًا، ثم الأقرب موعدًا.'],
@@ -14,7 +14,8 @@ const strings = {
   hide:['Hide completed','إخفاء البنود المكتملة'], details:['Interview details','تفاصيل المقابلة'],
   example:['Clarification example','مثال توضيحي'], actions:['Action items','الإجراءات المطلوبة'],
   why:['Justification','المبرر'], standard:['Standard & Control','المعيار والضابط'],
-  comment:['Comments','التعليقات'], record:['Record outcome','تسجيل النتيجة'], outcome:['Outcome','النتيجة'],
+  comment:['Comments','التعليقات'], result:['Audit result','نتيجة التدقيق'], goToItem:['Go to item','انتقل إلى البند'],
+  gapPlaceholder:['What did the client fail to show?','ما الذي عجز العميل عن إثباته؟'],
   risk:['Risk','الخطورة'], urgency:['Urgency','الأولوية الزمنية'], high:['High','مرتفعة'],
   medium:['Medium','متوسطة'], low:['Low','منخفضة'], immediate:['Immediate','فوري'],
   days:['days','يومًا'], title:['Title','العنوان'], domain:['Domain','المجال'], question:['Audit question','سؤال التدقيق'],
@@ -25,7 +26,6 @@ const strings = {
   paraphrase:['Paraphrase','إعادة صياغة'], unverified:['Needs verification','يحتاج إلى تحقق'],
   source:['Open ICAO source excerpt','فتح مصدر المقتطف من الإيكاو'], publication:['Full publication URL','رابط الإصدار الكامل'], full:['View full publication','عرض الإصدار الكامل'], close:['Close','إغلاق'], save:['Save','حفظ'],
   cancel:['Cancel','إلغاء'], gapText:['Gap description','وصف الفجوة'], follow:['Follow-up action','إجراء المتابعة'],
-  editGap:['Edit gap','تعديل الفجوة'],
   loadError:['Could not load the checklist. Refresh to try again.','تعذّر تحميل القائمة. أعد تحميل الصفحة للمحاولة مرة أخرى.'],
   storageError:['Browser storage is unavailable. Changes will only last while this page is open.','تخزين المتصفح غير متاح. تستمر التغييرات ما دامت هذه الصفحة مفتوحة.'],
   allDomains:['All domains','كل المجالات'], filterBy:['Filter by domain','التصفية حسب المجال'],
@@ -53,6 +53,7 @@ let auditors = [];
 let animateCards = false;
 // The domain menu stays open across rerenders so several domains can be ticked in a row.
 let filterOpen = false;
+let scrollTarget = '';
 // Rerendering replaces every button, so remember which control to refocus afterward.
 let refocus = '';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -102,11 +103,14 @@ async function start() {
 }
 
 // A single save operation keeps checklist, summary, and register in sync.
-function save() {
+function persist() {
   const {lang, hide, selected, auditor} = state;
   const progress = Object.fromEntries(state.items.map(item => [item.id, pickProgress(item, baseItems.find(base => base.id === item.id))]));
   try { localStorage.setItem(storageKey, JSON.stringify({lang, hide, selected, auditor, progress})); }
   catch { storageFailed = true; }
+}
+function save() {
+  persist();
   render();
 }
 
@@ -123,7 +127,6 @@ const auditorPill = item => {
   const who = auditors.find(person => person.key === item.auditor);
   return who ? `<span class="pill who">${t('auditorTag')} · ${localized(who.name)}</span>` : '';
 };
-const outcomePill = item => item.outcome ? `<span class="pill ${item.outcome}-tone"><i></i>${t(item.outcome)}</span>` : '';
 // Colors follow heat: red is hottest, then orange, then calmer blues and grays.
 const urgencyLevel = days => days === 0 ? 'now' : days <= 14 ? 'soon' : days <= 90 ? 'mid' : 'later';
 const badge = (key, value, level) => `<span class="pill lv-${level}"><i></i>${t(key)} · ${value}</span>`;
@@ -147,19 +150,35 @@ function stub(item) {
     <span class="barcode" aria-hidden="true"></span></button>`;
 }
 
+// The three audit results sit on the ticket itself; a gap opens its two notes right underneath.
+const resultIcons = {
+  pass:'<path d="m4 12 5 5L20 6"/>',
+  gap:'<path d="M12 4 2.5 20h19Z"/><path d="M12 10v4.5M12 17.5v.5"/>',
+  uncertain:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.5"/>'
+};
+const followOf = item => item.follow ?? localized(item.actions);
+function resultBar(item) {
+  const buttons = ['pass','gap','uncertain'].map(key => `<button type="button" class="res res-${key}" data-action="result" data-id="${escape(item.id)}" data-value="${key}"
+    aria-pressed="${item.outcome === key}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${resultIcons[key]}</svg>${t(key)}</button>`).join('');
+  const notes = item.outcome === 'gap' ? `<div class="gap-fields">
+    <label class="field">${t('gapText')}<textarea rows="2" dir="auto" data-gap="gapText" data-id="${escape(item.id)}" placeholder="${t('gapPlaceholder')}">${escape(item.gapText ?? '')}</textarea></label>
+    <label class="field">${t('follow')}<textarea rows="2" dir="auto" data-gap="follow" data-id="${escape(item.id)}">${escape(followOf(item))}</textarea></label></div>` : '';
+  return `<div class="result" role="group" aria-label="${t('result')}"><span class="result-label">${t('result')}</span>${buttons}</div>${notes}`;
+}
+
 function card(item, index = 0) {
-  return `<article class="card ${animateEntrance || animateCards ? 'enter' : ''}" data-risk="${riskKey(item.risk)}" style="--i:${Math.min(index, 8)}">
+  return `<article class="card ${animateEntrance || animateCards ? 'enter' : ''}" data-item="${escape(item.id)}" data-risk="${riskKey(item.risk)}" style="--i:${Math.min(index, 8)}">
     <div class="pass-main">
     <div class="row pass-head"><small class="pass-id">${planeIcon}<bdi>${escape(item.id)}</bdi></small>${status(item)}</div>
     <h4>${localized(item.title)}</h4>
     <p class="question">${localized(item.question)}</p>
-    <div class="meta">${riskBadge(item)}${urgencyBadge(item)}${outcomePill(item)}${state.auditor ? '' : auditorPill(item)}</div>
+    <div class="meta">${riskBadge(item)}${urgencyBadge(item)}${state.auditor ? '' : auditorPill(item)}</div>
     <details data-record="${escape(item.id)}" ${openedDetails.has(item.id) ? 'open' : ''}><summary>${t('details')}</summary>
       ${label('example',localized(item.example))}${label('actions',localized(item.actions))}${label('why',localized(item.why))}
     </details>
     ${item.comment ? label('comment',`<bdi>${escape(item.comment)}</bdi>`) : ''}
-    <div class="card-actions">${button('outcome','record',item.id,'primary')}
-      ${button('comment','comment',item.id)}</div>
+    ${resultBar(item)}
+    <div class="card-actions">${button('comment','comment',item.id)}</div>
     </div>
     ${stub(item)}
   </article>`;
@@ -178,9 +197,9 @@ function showPlan() {
 
 function gapCard(item) {
   return `<article class="gap ${animateEntrance ? 'enter' : ''}"><div class="row"><small><bdi>${escape(item.id)}</bdi></small>${status(item)}</div>
-    <h3>${localized(item.title)}</h3><div class="meta">${riskBadge(item)}${urgencyBadge(item)}${outcomePill(item)}</div>
-    ${label('gapText',`<bdi>${escape(item.gapText)}</bdi>`)}${label('follow',`<bdi>${escape(item.follow)}</bdi>`)}
-    ${button('outcome','editGap',item.id)}</article>`;
+    <h3>${localized(item.title)}</h3><div class="meta">${riskBadge(item)}${urgencyBadge(item)}</div>
+    ${label('gapText',`<bdi>${escape(item.gapText || '—')}</bdi>`)}${label('follow',`<bdi>${escape(followOf(item))}</bdi>`)}
+    ${button('goto','goToItem',item.id)}</article>`;
 }
 
 // Items point at a domain by key. Anything unmatched falls into an "Other" group instead of vanishing.
@@ -208,9 +227,9 @@ function countText(n) {
 
 // Each auditor is drawn from a few traits so the desk character always matches the person selected.
 const looks = {
-  youssef:{skin:'#d6a173', hair:'#2a1d16', shirt:'#2f6fd0'},
-  fareed:{skin:'#c28a5c', hair:'#1f1712', shirt:'#2a9d8f', glasses:true},
-  zaina:{skin:'#e0b48a', hair:'#3a2418', shirt:'#e07a5f'},
+  youssef:{skin:'#ebc6a2', hair:'#2a1d16', shirt:'#2f6fd0', glasses:'square'},
+  fareed:{skin:'#c28a5c', hair:'#1f1712', shirt:'#2a9d8f', glasses:'round'},
+  zaina:{skin:'#f2d0ae', hair:'#3a2418', shirt:'#e07a5f'},
   jana:{skin:'#d9a577', hair:'#2a1d16', shirt:'#6c5aa8', scarf:'#d4789a'}
 };
 function person(auditor, pop) {
@@ -225,7 +244,11 @@ function person(auditor, pop) {
     : `<path d="M45 58C42 28 98 28 95 58C90 44 50 44 45 58Z" fill="${look.hair}"/>`;
   const scarf = hijab ? `<path d="M70 26C42 26 38 52 41 72C41 90 34 102 20 118C50 130 90 130 120 118C106 102 99 90 99 72C102 52 98 26 70 26Z" fill="${look.scarf}"/>` : '';
   const neck = hijab ? '' : `<rect x="60" y="88" width="20" height="20" rx="8" fill="${look.skin}"/>`;
-  const glasses = look.glasses ? `<g fill="none" stroke="#1f2937" stroke-width="2"><circle cx="61" cy="63" r="8"/><circle cx="79" cy="63" r="8"/><path d="M69 63h2"/></g>` : '';
+  const frames = {
+    round:'<circle cx="61" cy="63" r="8"/><circle cx="79" cy="63" r="8"/><path d="M69 63h2"/>',
+    square:'<rect x="52" y="56" width="17" height="13" rx="3"/><rect x="71" y="56" width="17" height="13" rx="3"/><path d="M69 62h2"/>'
+  };
+  const glasses = look.glasses ? `<g fill="none" stroke="#1f2937" stroke-width="2">${frames[look.glasses]}</g>` : '';
   return `<div class="person ${pop ? 'pop' : ''}"><svg viewBox="0 0 140 170" focusable="false">
     ${hijab ? '' : hair}
     <path d="M12 170C12 124 38 102 70 102C102 102 128 124 128 170Z" fill="${look.shirt}"/>
@@ -343,6 +366,7 @@ function render() {
   animateCards = false;
   flipId = null;
   if (refocus) { document.querySelector(refocus)?.focus(); refocus = ''; }
+  if (scrollTarget) { document.querySelector(`[data-item="${scrollTarget}"]`)?.scrollIntoView({block:'center', behavior: reducedMotion.matches ? 'auto' : 'smooth'}); scrollTarget = ''; }
 }
 
 // Metric tiles tick up from zero like a departure board settling on its values.
@@ -388,50 +412,12 @@ function field(title, name, value = '', type = 'text', attrs = 'required') {
     : `<input type="${type}" name="${name}" value="${escape(value)}" ${attrs}>`;
   return `<label class="field">${title}${control}</label>`;
 }
-function select(title, name, choices, value) {
-  return `<label class="field">${title}<select name="${name}">${choices.map(key =>
-    `<option value="${key}" ${key===value?'selected':''}>${t(key)}</option>`).join('')}</select></label>`;
-}
-function priorityFields(item) {
-  return `<div class="form-grid">${select(t('risk'),'risk',['high','medium','low'],item?.risk || 'medium')}
-    ${field(`${t('urgency')} · ${t('days')} (0 = ${t('immediate')})`,'days',item?.days ?? 14,'number','required min="0" step="1"')}</div>`;
-}
 function onSubmit(handler) {
   modal.querySelector('form').addEventListener('submit', event => {
     event.preventDefault();
     if (handler(new FormData(event.currentTarget),event.currentTarget) === false) return;
     modal.close();
     save();
-  });
-}
-
-// Outcome is intentionally independent of review completion.
-// Switching away from a gap removes it from the register but retains its draft text.
-function editOutcome(item) {
-  dialog(t(item.outcome==='gap'?'editGap':'record'),`<form>
-    ${select(t('outcome'),'outcome',['pass','gap','uncertain'],item.outcome || 'uncertain')}
-    <div id="gap-fields" class="dialog-content">
-      ${field(t('gapText'),'gapText',item.gapText,'textarea','required dir="auto"')}
-      ${priorityFields(item)}${field(t('follow'),'follow',item.follow ?? item.actions[state.lang],'textarea','required dir="auto"')}
-    </div>${formButtons()}</form>`);
-  const form = modal.querySelector('form');
-  const fields = form.querySelector('#gap-fields');
-  // Hidden fields should not participate in validation for non-gap outcomes.
-  const toggle = () => {
-    fields.hidden = form.elements.outcome.value !== 'gap';
-    for (const field of fields.querySelectorAll('input,select,textarea')) field.disabled = fields.hidden;
-  };
-  form.elements.outcome.addEventListener('change', toggle);
-  toggle();
-  onSubmit(data => {
-    flipId = item.id;
-    item.outcome = data.get('outcome');
-    if (item.outcome === 'gap') {
-      item.gapText = data.get('gapText').trim();
-      item.follow = data.get('follow').trim();
-      item.risk = data.get('risk');
-      item.days = Number(data.get('days'));
-    }
   });
 }
 
@@ -461,7 +447,16 @@ document.addEventListener('click', event => {
     case 'plan': showPlan(); break;
     case 'close': modal.close(); break;
     case 'source': showSource(item); break;
-    case 'outcome': editOutcome(item); break;
+    case 'result': {
+      const value = control.dataset.value;
+      item.outcome = item.outcome === value ? undefined : value;
+      flipId = item.id;
+      refocus = item.outcome === 'gap' ? `textarea[data-gap="gapText"][data-id="${id}"]` : `button[data-action="result"][data-id="${id}"][data-value="${value}"]`;
+      save(); break;
+    }
+    case 'goto':
+      // Jump to the item from the action plan, clearing filters that could hide it.
+      modal.close(); state.auditor = ''; state.selected = []; scrollTarget = id; save(); break;
     case 'comment':
       dialog(t('comment'),`<form>${field(t('comment'),'comment',item.comment,'textarea','dir="auto"')}${formButtons()}</form>`);
       onSubmit(data=>{ item.comment = data.get('comment'); });
@@ -471,6 +466,12 @@ document.addEventListener('click', event => {
 document.addEventListener('change',event=>{
   const box = event.target;
   if (!state) return;
+  if (box.dataset.gap) {
+    // Notes save quietly so typing is never interrupted by a rerender.
+    const note = state.items.find(candidate => candidate.id === box.dataset.id);
+    if (note) { note[box.dataset.gap] = box.value.trim(); persist(); }
+    return;
+  }
   if (box.id === 'hide') {
     state.hide = box.checked;
     save();
